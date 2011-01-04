@@ -14,6 +14,8 @@ digits is 18.
 Precision is user-defined, so you can use this data type for currency rates.
 
 Example usage:
+  #include "decimal.h"
+
   using namespace dec;
 
   // the following declares currency variable with 2 decimal points
