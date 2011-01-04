@@ -49,6 +49,7 @@ typedef signed long long DEC_INT64;
 typedef DEC_INT64 int64;
 typedef int64 dec_storage_t;
 typedef unsigned int uint;
+typedef long double xdouble;
 
 // ----------------------------------------------------------------------------
 // Forward class definitions
@@ -88,6 +89,18 @@ inline int64 round(double value) {
   return intPart;
 }
 
+inline int64 round(xdouble value) {
+  xdouble val1;
+  
+  if (value < 0.0)
+    val1 = value - 0.5;
+  else  
+    val1 = value + 0.5;
+
+  int64 intPart = int64(val1);
+  return intPart;
+}
+
 #endif DEC_EXTERNAL_ROUND
 
 template <int Prec>
@@ -100,6 +113,7 @@ public:
     explicit decimal(uint value) { init(value); }
     explicit decimal(int value) { init(value); }
     explicit decimal(int64 value) { init(value); }
+    explicit decimal(xdouble value) { init(value); }
     explicit decimal(double value) { init(value); }
     explicit decimal(float value) { init(value); }
 
@@ -202,7 +216,16 @@ public:
        m_value = round(nval); 
     }
 
+    xdouble getAsXDouble() const { return static_cast<xdouble>(m_value) / getPrecFactorXDouble(); }
+
+    void setAsXDouble(xdouble value)
+    { 
+       xdouble nval = value * getPrecFactorXDouble(); 
+       m_value = round(nval); 
+    }
+
     // returns integer value = real_value * (10 ^ precision)
+    // use to load/store decimal value in external memory
     int64 getUnbiased() const { return m_value; }
     void setUnbiased(int64 value) { m_value = value; }
 
@@ -213,13 +236,24 @@ public:
             return (decimal<Prec>(0) - *this);
     }
 
+    int64 getAsInteger() const { 
+        return round(getAsXDouble());
+    }
 protected:
+    inline xdouble getPrecFactorXDouble() const { return static_cast<xdouble>(DecimalFactor<Prec>::value); }
     inline double getPrecFactorDouble() const { return static_cast<double>(DecimalFactor<Prec>::value); }
     inline int getPrecFactorInt() const { return DecimalFactor<Prec>::value; }
     void init(const decimal &src) { m_value = src.m_value; }
     void init(uint value) { m_value = DecimalFactor<Prec>::value * static_cast<int>(value); }
     void init(int value) { m_value = DecimalFactor<Prec>::value * value; }
     void init(int64 value) { m_value = DecimalFactor<Prec>::value * value; }
+    void init(xdouble value) {
+      m_value = 
+         round(
+             static_cast<xdouble>(DecimalFactor<Prec>::value) * 
+             value
+         );
+    }
     void init(double value) {
       m_value = 
          round(
@@ -235,7 +269,6 @@ protected:
              static_cast<double>(value)
          );
     }
-
 protected:
     dec_storage_t m_value;
 };
