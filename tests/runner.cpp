@@ -1,7 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////
 // Name:        runner.cpp
-// Purpose:     Boost test runner.
+// Purpose:     Test runner.
 //              To compile tests just add all "*.cpp" files to one project.
+//              Add "--log_level=all" execution parameter for all messages.
 // Author:      Piotr Likus
 // Modified by:
 // Created:     20/06/2010
