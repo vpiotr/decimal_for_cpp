@@ -8,7 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include <boost/test/unit_test.hpp>
-#include "pub/decimal.h"
+#include "decimal.h"
 
 template <typename T> 
 std::string toString(const T &arg) {
