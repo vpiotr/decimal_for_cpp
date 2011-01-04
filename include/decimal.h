@@ -79,10 +79,10 @@ template <> struct DecimalFactor<1> {
 inline int64 round(double value) {
   double val1;
   
-  if (value < 0.0f)
-    val1 = value - 0.5f;
+  if (value < 0.0)
+    val1 = value - 0.5;
   else  
-    val1 = value + 0.5f;
+    val1 = value + 0.5;
 
   int64 intPart = int64(val1);
   return intPart;
