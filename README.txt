@@ -5,13 +5,17 @@ Created:     03/01/2011
 Licence:     BSD
 Version:     1.0
 
-This data type is designed to perform calculation with on-fly roundings
-& to support correct compare function (floating-point compare is unreliable).
+This data type is designed to perform calculation with on-fly  roundings
+&  to  support  correct  compare  function  (floating-point  compare  is
+unreliable).
 
 Values are stored internally using 64-bit integer, so maximum number of
 digits is 18.
 
-Precision is user-defined, so you can use this data type for currency rates.
+Precision is user-defined, so you can use this data  type  for  currency
+rates.
+
+To store decimal in file you can use "unbiased" functions.
 
 Example usage:
   #include "decimal.h"
@@ -23,12 +27,16 @@ Example usage:
   decimal<2> value(143125);
 
   // to use non-decimal constants you need to convert them to decimal
-  value = value / decimal<2>(333);
+  value = value / decimal<2>(333.0);
 
-  // output values using conversion to double
+  // output values using conversion to double or xdouble (long double)
   cout << "Result is: " << value.getAsDouble() << endl;
   // this should display something like "4337.12"
 
+  // to mix decimals with different precision cast them to xdouble;
+  // you can use pre-defined types (decimal2, decimal4, decimal6)
+  decimal6 exchangeRate(12.1234);
+  value = decimal2(value.getAsXDouble() * exchangeRate.getAsXDouble());
 
 Directory structure:
 \doc     - documentation
