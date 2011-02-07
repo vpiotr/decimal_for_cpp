@@ -106,5 +106,19 @@ BOOST_AUTO_TEST_CASE(decimalRounding)
 
    balance = dec::decimal2(-3.154);
    BOOST_CHECK(balance == dec::decimal2(-3.15));
+
+   balance = dec::decimal2(3.67);
+   balance = balance * dec::decimal2(3.67);
+   BOOST_CHECK(balance == dec::decimal2(13.47));
+
+   balance = dec::decimal2(3.67);
+   balance = balance / dec::decimal2(1.27);
+   BOOST_CHECK(balance == dec::decimal2(2.89));
+
+   // test precision mixing 
+   balance = dec::decimal2(3.67);
+   dec::decimal<6> crate(1.4567);
+   balance = dec::decimal_cast<2>((dec::decimal_cast<6>(balance) * crate));
+   BOOST_CHECK(balance == dec::decimal2(5.35));
 }
 
