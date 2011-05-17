@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 // Name:        decimal.h
-// Purpose:     Decimal data type support, for COBOL-like fixed-point 
+// Purpose:     Decimal data type support, for COBOL-like fixed-point
 //              operations on currency values.
 // Author:      Piotr Likus
 // Modified by:
@@ -18,7 +18,7 @@
 ///
 /// Decimal value type. Use for capital calculations.
 /// Note: maximum handled value is: +9,223,372,036,854,775,807 (divided by prec)
-/// 
+///
 /// Sample usage:
 ///   using namespace dec;
 ///   decimal<2> value(143125);
@@ -31,9 +31,9 @@ namespace dec
 // ----------------------------------------------------------------------------
 // Config section
 // ----------------------------------------------------------------------------
-// - define DEC_EXTERNAL_INT64 if you do not want internal definition of "int64" data type   
+// - define DEC_EXTERNAL_INT64 if you do not want internal definition of "int64" data type
 //   in this case define "DEC_INT64" somewhere
-// - define DEC_EXTERNAL_ROUND if you do not want internal "round()" function 
+// - define DEC_EXTERNAL_ROUND if you do not want internal "round()" function
 // - define DEC_CROSS_DOUBLE if you want to use double (intead of xdouble) for cross-conversions
 
 // ----------------------------------------------------------------------------
@@ -80,10 +80,10 @@ template <> struct DecimalFactor<1> {
 // round value - convert to int64
 inline int64 round(double value) {
   double val1;
-  
+
   if (value < 0.0)
     val1 = value - 0.5;
-  else  
+  else
     val1 = value + 0.5;
 
   int64 intPart = int64(val1);
@@ -92,10 +92,10 @@ inline int64 round(double value) {
 
 inline int64 round(xdouble value) {
   xdouble val1;
-  
+
   if (value < 0.0)
     val1 = value - 0.5;
-  else  
+  else
     val1 = value + 0.5;
 
   int64 intPart = int64(val1);
@@ -129,24 +129,24 @@ public:
 
     inline int getPrec() const { return DecimalFactor<Prec>::value; }
 
-    decimal & operator=(const decimal &rhs) { 
-        if (&rhs != this) m_value = rhs.m_value; 
+    decimal & operator=(const decimal &rhs) {
+        if (&rhs != this) m_value = rhs.m_value;
         return *this;
     }
 
-    decimal & operator=(int64 rhs) { 
-        m_value = DecimalFactor<Prec>::value * rhs; 
+    decimal & operator=(int64 rhs) {
+        m_value = DecimalFactor<Prec>::value * rhs;
         return *this;
     }
 
-    decimal & operator=(int rhs) { 
-        m_value = DecimalFactor<Prec>::value * rhs; 
+    decimal & operator=(int rhs) {
+        m_value = DecimalFactor<Prec>::value * rhs;
         return *this;
     }
 
     decimal & operator=(double rhs)
-    { 
-        m_value = round(static_cast<double>(DecimalFactor<Prec>::value) * rhs); 
+    {
+        m_value = round(static_cast<double>(DecimalFactor<Prec>::value) * rhs);
         return *this;
     }
 
@@ -175,9 +175,9 @@ public:
     }
 
     const decimal operator+(const decimal &rhs) const {
-        decimal result = *this;   
+        decimal result = *this;
         result.m_value += rhs.m_value;
-        return result;              
+        return result;
     }
 
     decimal & operator+=(const decimal &rhs) {
@@ -186,9 +186,9 @@ public:
     }
 
     const decimal operator-(const decimal &rhs) const {
-        decimal result = *this;     
+        decimal result = *this;
         result.m_value -= rhs.m_value;
-        return result;              
+        return result;
     }
 
     decimal & operator-=(const decimal &rhs) {
@@ -197,21 +197,21 @@ public:
     }
 
     const decimal operator*(const decimal &rhs) const {
-        decimal result = *this;   
+        decimal result = *this;
         //result.m_value = (result.m_value * rhs.m_value) / DecimalFactor<Prec>::value;
-        result.m_value = 
+        result.m_value =
              round(
                  static_cast<cross_float>(result.m_value * rhs.m_value)
                  /
                  static_cast<cross_float>(DecimalFactor<Prec>::value)
              );
 
-        return result;              
+        return result;
     }
 
     decimal & operator*=(const decimal &rhs) {
       //m_value = (m_value * rhs.m_value) / DecimalFactor<Prec>::value;
-      m_value = 
+      m_value =
             round(
                 static_cast<cross_float>(m_value * rhs.m_value)
                 /
@@ -222,21 +222,21 @@ public:
     }
 
     const decimal operator/(const decimal &rhs) const {
-        decimal result = *this;     
-        //result.m_value = (result.m_value * DecimalFactor<Prec>::value) / rhs.m_value;            
-        result.m_value = 
+        decimal result = *this;
+        //result.m_value = (result.m_value * DecimalFactor<Prec>::value) / rhs.m_value;
+        result.m_value =
             round(
                 static_cast<cross_float>(result.m_value * DecimalFactor<Prec>::value)
                 /
                 static_cast<cross_float>(rhs.m_value)
             );
 
-        return result;              
+        return result;
     }
 
     decimal & operator/=(const decimal &rhs) {
       //m_value = (m_value * DecimalFactor<Prec>::value) / rhs.m_value;
-      m_value = 
+      m_value =
             round(
                 static_cast<cross_float>(m_value * DecimalFactor<Prec>::value)
                 /
@@ -249,17 +249,17 @@ public:
     double getAsDouble() const { return static_cast<double>(m_value) / getPrecFactorDouble(); }
 
     void setAsDouble(double value)
-    { 
-       double nval = value * getPrecFactorDouble(); 
-       m_value = round(nval); 
+    {
+       double nval = value * getPrecFactorDouble();
+       m_value = round(nval);
     }
 
     xdouble getAsXDouble() const { return static_cast<xdouble>(m_value) / getPrecFactorXDouble(); }
 
     void setAsXDouble(xdouble value)
-    { 
-       xdouble nval = value * getPrecFactorXDouble(); 
-       m_value = round(nval); 
+    {
+       xdouble nval = value * getPrecFactorXDouble();
+       m_value = round(nval);
     }
 
     // returns integer value = real_value * (10 ^ precision)
@@ -267,14 +267,14 @@ public:
     int64 getUnbiased() const { return m_value; }
     void setUnbiased(int64 value) { m_value = value; }
 
-    decimal<Prec> abs() const { 
+    decimal<Prec> abs() const {
         if (m_value >= 0)
             return *this;
         else
             return (decimal<Prec>(0) - *this);
     }
 
-    int64 getAsInteger() const { 
+    int64 getAsInteger() const {
         return round(getAsXDouble());
     }
 protected:
@@ -286,24 +286,24 @@ protected:
     void init(int value) { m_value = DecimalFactor<Prec>::value * value; }
     void init(int64 value) { m_value = DecimalFactor<Prec>::value * value; }
     void init(xdouble value) {
-      m_value = 
+      m_value =
          round(
-             static_cast<xdouble>(DecimalFactor<Prec>::value) * 
+             static_cast<xdouble>(DecimalFactor<Prec>::value) *
              value
          );
     }
     void init(double value) {
-      m_value = 
+      m_value =
          round(
-             static_cast<double>(DecimalFactor<Prec>::value) * 
+             static_cast<double>(DecimalFactor<Prec>::value) *
              value
          );
     }
 
     void init(float value) {
-      m_value = 
+      m_value =
          round(
-             static_cast<double>(DecimalFactor<Prec>::value) * 
+             static_cast<double>(DecimalFactor<Prec>::value) *
              static_cast<double>(value)
          );
     }
@@ -314,15 +314,15 @@ protected:
         // no conversion required
             m_value = value;
         } else {
-        // conversion 
-          m_value = 
+        // conversion
+          m_value =
              round(
                  static_cast<cross_float>(value)
                  *
                  (
-                   static_cast<cross_float>(ownFactor) / 
+                   static_cast<cross_float>(ownFactor) /
                    static_cast<cross_float>(precFactor)
-                 ) 
+                 )
              );
         }
     }
@@ -345,6 +345,20 @@ template < int Prec, class T >
 decimal<Prec> decimal_cast(const T &arg)
 {
     return decimal<Prec>(arg.getUnbiased(), arg.getPrec());
+}
+
+// Note: this specialization is required due to error in VS 2010
+// which incorrectly calculates expression like dec::decimal<6>(a * b)
+// for uint arguments. Such expression is initialized with a strange number.
+//
+// So instead of:
+//   c = dec::decimal<6>(a * b);
+// use:
+//   c = dec::decimal_cast<6>(a * b);
+template < int Prec >
+decimal<Prec> decimal_cast(uint arg)
+{
+    return decimal<Prec>(static_cast<double>(arg));
 }
 
 } // namespace
