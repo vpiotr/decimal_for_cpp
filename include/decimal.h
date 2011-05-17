@@ -361,5 +361,11 @@ decimal<Prec> decimal_cast(uint arg)
     return decimal<Prec>(static_cast<double>(arg));
 }
 
+template < int Prec >
+decimal<Prec> decimal_cast(int arg)
+{
+    return decimal<Prec>(static_cast<double>(arg));
+}
+
 } // namespace
 #endif // _DECIMAL_H__
