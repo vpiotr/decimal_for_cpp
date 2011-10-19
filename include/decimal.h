@@ -102,7 +102,7 @@ inline int64 round(xdouble value) {
   return intPart;
 }
 
-#endif DEC_EXTERNAL_ROUND
+#endif //DEC_EXTERNAL_ROUND
 
 template <int Prec>
 class decimal {
