@@ -48,8 +48,10 @@ typedef signed long long DEC_INT64;
 #endif
 
 typedef DEC_INT64 int64;
+// type for storing currency value internally
 typedef int64 dec_storage_t;
 typedef unsigned int uint;
+// xdouble is an "extended double" - can be long double, __float128, _Quad - as you wish
 typedef long double xdouble;
 
 // ----------------------------------------------------------------------------
@@ -102,7 +104,7 @@ inline int64 round(xdouble value) {
   return intPart;
 }
 
-#endif //DEC_EXTERNAL_ROUND
+#endif // DEC_EXTERNAL_ROUND
 
 template <int Prec>
 class decimal {
@@ -345,6 +347,12 @@ template < int Prec, class T >
 decimal<Prec> decimal_cast(const T &arg)
 {
     return decimal<Prec>(arg.getUnbiased(), arg.getPrec());
+}
+
+template < int Prec>
+decimal<Prec> decimal_cast(double arg)
+{
+    return decimal<Prec>(arg);
 }
 
 // Note: this specialization is required due to error in VS 2010
