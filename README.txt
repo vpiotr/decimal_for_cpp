@@ -43,3 +43,6 @@ Directory structure:
 \include - headers
 \test    - unit tests, Boost-based
 
+Tested compilers:
+- VS2010 Express SP1
+- Code::Blocks 10.05 + MinGW + gcc 4.5
