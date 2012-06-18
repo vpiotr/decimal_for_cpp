@@ -3,7 +3,7 @@ Purpose:     Decimal data type support, for COBOL-like fixed-point
 Author:      Piotr Likus
 Created:     03/01/2011
 Licence:     BSD
-Version:     1.1
+Version:     1.2
 
 This data type is designed to perform calculation with on-fly  roundings
 &  to  support  correct  compare  function  (floating-point  compare  is
@@ -27,16 +27,21 @@ Example usage:
   decimal<2> value(143125);
 
   // to use non-decimal constants you need to convert them to decimal
-  value = value / decimal<2>(333.0);
+  value = value / decimal_cast<2>(333.0);
 
-  // output values using conversion to double or xdouble (long double)
-  cout << "Result is: " << value.getAsDouble() << endl;
-  // this should display something like "4337.12"
+  // output values
+  cout << "Result is: " << value << endl;
+  // this should display something like "429.80"
 
   // to mix decimals with different precision use decimal_cast
-  // you can use pre-defined types (decimal2, decimal4, decimal6)
   decimal<6> exchangeRate(12.1234);
   value = decimal_cast<2>(decimal_cast<6>(value) * exchangeRate);
+
+  cout << "Result 2 is: " << value << endl;
+  // this should display something like "5210.64"
+
+  cout << "Result 2<6> is: " << decimal_cast<6>(value) << endl;
+  // this should display something like "5210.640000"
 
 Directory structure:
 \doc     - documentation
