@@ -22,8 +22,11 @@
 /// Sample usage:
 ///   using namespace dec;
 ///   decimal<2> value(143125);
-///   value = value / decimal<2>(333);
-///   cout << "Result is: " << value.getAsDouble() << endl;
+///   value = value / decimal_cast<2>(333);
+///   cout << "Result is: " << value << endl;
+
+#include <iosfwd>
+#include <iomanip>
 
 namespace dec
 {
@@ -129,7 +132,8 @@ public:
 
     ~decimal() {}
 
-    inline int getPrec() const { return DecimalFactor<Prec>::value; }
+    inline int getPrecFactor() const { return DecimalFactor<Prec>::value; }
+    inline int getDecimalPoints() const { return Prec; }
 
     decimal & operator=(const decimal &rhs) {
         if (&rhs != this) m_value = rhs.m_value;
@@ -279,6 +283,13 @@ public:
     int64 getAsInteger() const {
         return round(getAsXDouble());
     }
+
+    // returns two parts: before and after decimal point
+    void unpack(int64 &beforeValue, int64 &afterValue) const {
+      afterValue = m_value % DecimalFactor<Prec>::value;
+      beforeValue = (m_value - afterValue) / DecimalFactor<Prec>::value;
+    }
+
 protected:
     inline xdouble getPrecFactorXDouble() const { return static_cast<xdouble>(DecimalFactor<Prec>::value); }
     inline double getPrecFactorDouble() const { return static_cast<double>(DecimalFactor<Prec>::value); }
@@ -346,7 +357,7 @@ typedef decimal<6> decimal6;
 template < int Prec, class T >
 decimal<Prec> decimal_cast(const T &arg)
 {
-    return decimal<Prec>(arg.getUnbiased(), arg.getPrec());
+    return decimal<Prec>(arg.getUnbiased(), arg.getPrecFactor());
 }
 
 template < int Prec>
@@ -373,6 +384,47 @@ template < int Prec >
 decimal<Prec> decimal_cast(int arg)
 {
     return decimal<Prec>(static_cast<double>(arg));
+}
+
+// input
+template <class charT, class traits, int prec>
+  std::basic_istream<charT, traits> &
+    operator>>(std::basic_istream<charT, traits> & is, decimal<prec> & d)
+{
+  double dbl;
+  is >> dbl;
+  d.setAsDouble(dbl);
+  return is;
+}
+
+// output
+template <class charT, class traits, int prec>
+  std::basic_ostream<charT, traits> &
+    operator<<(std::basic_ostream<charT, traits> & os, const decimal<prec> & d)
+{
+  std::string helper;
+  os << toString(d, helper);
+  return os;
+}
+
+template <int prec> 
+std::string &toString(const decimal<prec> &arg, std::string &output) {
+  using namespace std;
+
+  ostringstream out;
+  int64 before, after;
+  arg.unpack(before, after);
+  out << before << ".";
+  out << setw(arg.getDecimalPoints()) << setfill('0') << right << after;
+  output = out.str();
+  return output;
+}
+
+template <int prec> 
+std::string toString(const decimal<prec> &arg) {
+  std::string res;
+  toString(arg, res);
+  return res;
 }
 
 } // namespace
