@@ -29,6 +29,16 @@
 #include <iosfwd>
 #include <iomanip>
 
+#ifndef DEC_EXTERNAL_LIMITS
+#ifndef __STDC_LIMIT_MACROS
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+#undef __STDC_LIMIT_MACROS
+#else
+#include <stdint.h>
+#endif
+#endif
+
 namespace dec
 {
 
@@ -39,6 +49,7 @@ namespace dec
 //   in this case define "DEC_INT64" somewhere
 // - define DEC_EXTERNAL_ROUND if you do not want internal "round()" function
 // - define DEC_CROSS_DOUBLE if you want to use double (intead of xdouble) for cross-conversions
+// - define DEC_EXTERNAL_LIMITS to define by yourself INT32_MAX
 
 // ----------------------------------------------------------------------------
 // Simple type definitions
@@ -207,11 +218,7 @@ public:
         decimal result = *this;
         //result.m_value = (result.m_value * rhs.m_value) / DecimalFactor<Prec>::value;
         result.m_value =
-             round(
-                 static_cast<cross_float>(result.m_value * rhs.m_value)
-                 /
-                 static_cast<cross_float>(DecimalFactor<Prec>::value)
-             );
+             multDiv(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
 
         return result;
     }
@@ -219,11 +226,7 @@ public:
     decimal & operator*=(const decimal &rhs) {
       //m_value = (m_value * rhs.m_value) / DecimalFactor<Prec>::value;
       m_value =
-            round(
-                static_cast<cross_float>(m_value * rhs.m_value)
-                /
-                static_cast<cross_float>(DecimalFactor<Prec>::value)
-            );
+            multDiv(m_value, rhs.m_value, DecimalFactor<Prec>::value);
 
       return *this;
     }
@@ -232,11 +235,7 @@ public:
         decimal result = *this;
         //result.m_value = (result.m_value * DecimalFactor<Prec>::value) / rhs.m_value;
         result.m_value =
-            round(
-                static_cast<cross_float>(result.m_value * DecimalFactor<Prec>::value)
-                /
-                static_cast<cross_float>(rhs.m_value)
-            );
+            multDiv(result.m_value, DecimalFactor<Prec>::value, rhs.m_value);
 
         return result;
     }
@@ -244,11 +243,7 @@ public:
     decimal & operator/=(const decimal &rhs) {
       //m_value = (m_value * DecimalFactor<Prec>::value) / rhs.m_value;
       m_value =
-            round(
-                static_cast<cross_float>(m_value * DecimalFactor<Prec>::value)
-                /
-                static_cast<cross_float>(rhs.m_value)
-            );
+            multDiv(m_value, DecimalFactor<Prec>::value, rhs.m_value);
 
       return *this;
     }
@@ -294,6 +289,32 @@ public:
 protected:
     inline xdouble getPrecFactorXDouble() const { return static_cast<xdouble>(DecimalFactor<Prec>::value); }
     inline double getPrecFactorDouble() const { return static_cast<double>(DecimalFactor<Prec>::value); }
+
+    // result = (value1 * value2) / divider
+    inline static int64 multDiv(int64 value1, int64 value2, int64 divider) 
+    {
+      if ((abs(value1) <= INT32_MAX) || (abs(value2) <= INT32_MAX))
+      { 
+        // no-overflow version
+        return
+             round(
+                 static_cast<cross_float>(value1 * value2)
+                 /
+                 static_cast<cross_float>(divider)
+             );
+      } else {
+        // overflow can occur - use less precise version
+        return
+               round(
+                   static_cast<cross_float>(value1) 
+                   * 
+                   static_cast<cross_float>(value2)
+                   /
+                   static_cast<cross_float>(divider)
+               );
+      }
+    }
+
     void init(const decimal &src) { m_value = src.m_value; }
     void init(uint value) { m_value = DecimalFactor<Prec>::value * static_cast<int>(value); }
     void init(int value) { m_value = DecimalFactor<Prec>::value * value; }
@@ -339,6 +360,14 @@ protected:
              );
         }
     }
+
+    template<typename T>
+    static T abs(T value) {
+      if (value < 0)
+        return -value;
+      else
+        return value;
+    }
 protected:
     dec_storage_t m_value;
 };
@@ -353,7 +382,6 @@ typedef decimal<6> decimal6;
 // ----------------------------------------------------------------------------
 // global functions
 // ----------------------------------------------------------------------------
-
 template < int Prec, class T >
 decimal<Prec> decimal_cast(const T &arg)
 {
