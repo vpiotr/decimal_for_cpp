@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(decimalRounding)
 
    // test int overflow
    dec::decimal<10> largeValue(1311.12176161);
-   balance = dec::decimal_cast<2>((dec::decimal_cast<6>(largeValue) * dec::decimal_cast<6>(10)));
+   balance = dec::decimal_cast<2>(largeValue * dec::decimal_cast<10>(10));
    BOOST_CHECK(balance == dec::decimal2(13111.22));
 }
 
