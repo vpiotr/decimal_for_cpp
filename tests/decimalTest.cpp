@@ -7,12 +7,10 @@
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
-#define BOOST_TEST_MODULE "Decimal tests"
-#include <boost/test/included/unit_test.hpp>
-
+#include <boost/test/unit_test.hpp>
 #include "decimal.h"
 
-template <typename T>
+template <typename T> 
 std::string toString(const T &arg) {
     std::ostringstream	out;
     out << arg.getAsDouble();
@@ -28,7 +26,7 @@ BOOST_AUTO_TEST_CASE(decimalArithmetic)
    balance = 0;
    BOOST_TEST_MESSAGE("balance-0: " << toString(balance));
    BOOST_CHECK(balance == dec::decimal2(0));
-
+   
    balance += a;
    BOOST_TEST_MESSAGE("balance-1: " << toString(balance));
    BOOST_CHECK(balance != t);
@@ -117,10 +115,15 @@ BOOST_AUTO_TEST_CASE(decimalRounding)
    balance = balance / dec::decimal2(1.27);
    BOOST_CHECK(balance == dec::decimal2(2.89));
 
-   // test precision mixing
+   // test precision mixing 
    balance = dec::decimal2(3.67);
    dec::decimal<6> crate(1.4567);
    balance = dec::decimal_cast<2>((dec::decimal_cast<6>(balance) * crate));
    BOOST_CHECK(balance == dec::decimal2(5.35));
+
+   // test int overflow
+   dec::decimal<10> largeValue(1311.12176161);
+   balance = dec::decimal_cast<2>((dec::decimal_cast<6>(largeValue) * dec::decimal_cast<6>(10)));
+   BOOST_CHECK(balance == dec::decimal2(13111.22));
 }
 
