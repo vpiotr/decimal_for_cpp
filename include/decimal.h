@@ -3,8 +3,9 @@
 // Purpose:     Decimal data type support, for COBOL-like fixed-point
 //              operations on currency values.
 // Author:      Piotr Likus
-// Modified by:
 // Created:     03/01/2011
+// Last change: 29/07/2012
+// Version:     1.3
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -69,15 +70,15 @@ typedef long double xdouble;
 // Class definitions
 // ----------------------------------------------------------------------------
 template <int Prec> struct DecimalFactor {
-    static const int value = 10 * DecimalFactor<Prec - 1>::value;
+    static const int64 value = 10 * DecimalFactor<Prec - 1>::value;
 };
 
 template <> struct DecimalFactor<0> {
-    static const int value = 1;
+    static const int64 value = 1;
 };
 
 template <> struct DecimalFactor<1> {
-    static const int value = 10;
+    static const int64 value = 10;
 };
 
 #ifndef DEC_EXTERNAL_ROUND
@@ -128,11 +129,11 @@ public:
     explicit decimal(xdouble value) { init(value); }
     explicit decimal(double value) { init(value); }
     explicit decimal(float value) { init(value); }
-    explicit decimal(int64 value, int precFactor) { initWithPrec(value, precFactor); }
+    explicit decimal(int64 value, int64 precFactor) { initWithPrec(value, precFactor); }
 
     ~decimal() {}
 
-    inline int getPrecFactor() const { return DecimalFactor<Prec>::value; }
+    inline int64 getPrecFactor() const { return DecimalFactor<Prec>::value; }
     inline int getDecimalPoints() const { return Prec; }
 
     decimal & operator=(const decimal &rhs) {
@@ -293,7 +294,6 @@ public:
 protected:
     inline xdouble getPrecFactorXDouble() const { return static_cast<xdouble>(DecimalFactor<Prec>::value); }
     inline double getPrecFactorDouble() const { return static_cast<double>(DecimalFactor<Prec>::value); }
-    inline int getPrecFactorInt() const { return DecimalFactor<Prec>::value; }
     void init(const decimal &src) { m_value = src.m_value; }
     void init(uint value) { m_value = DecimalFactor<Prec>::value * static_cast<int>(value); }
     void init(int value) { m_value = DecimalFactor<Prec>::value * value; }
@@ -320,8 +320,8 @@ protected:
              static_cast<double>(value)
          );
     }
-    void initWithPrec(int64 value, int precFactor) {
-        int ownFactor = DecimalFactor<Prec>::value;
+    void initWithPrec(int64 value, int64 precFactor) {
+        int64 ownFactor = DecimalFactor<Prec>::value;
 
         if (ownFactor == precFactor) {
         // no conversion required
