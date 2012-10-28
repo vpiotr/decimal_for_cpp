@@ -28,6 +28,7 @@
 
 #include <iosfwd>
 #include <iomanip>
+#include <sstream>
 
 #ifndef DEC_EXTERNAL_LIMITS
 #ifndef __STDC_LIMIT_MACROS
