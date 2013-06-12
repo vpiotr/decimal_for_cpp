@@ -17,6 +17,14 @@ std::string toString(const T &arg) {
     return(out.str());
 }
 
+template <typename T>
+T fromString (const std::string &str) {
+    std::istringstream is(str);
+    T t;
+    is >> t;
+    return t;
+}
+
 BOOST_AUTO_TEST_CASE(decimalArithmetic)
 {
    dec::decimal<2> balance;
@@ -125,5 +133,50 @@ BOOST_AUTO_TEST_CASE(decimalRounding)
    dec::decimal<10> largeValue(1311.12176161);
    balance = dec::decimal_cast<2>(largeValue * dec::decimal_cast<10>(10));
    BOOST_CHECK(balance == dec::decimal2(13111.22));
+
+   // test serialization
+   dec::decimal<12> longDec1(6321311.121761616789);
+   dec::decimal<12> longDec2;
+
+   std::string s = toString(longDec1);
+   longDec2 = fromString<dec::decimal<12> >(s);
+   BOOST_CHECK(longDec1 == longDec2);
 }
 
+
+BOOST_AUTO_TEST_CASE(decimalUnpack)
+{
+  using namespace dec;
+
+  decimal<4> d(-0.5);
+  int64 before, after;
+  d.unpack(before, after);
+  BOOST_CHECK(before == 0);
+  BOOST_CHECK(after == -5000);
+
+  decimal<4> d1(-1.5);
+  d1.unpack(before, after);
+  BOOST_CHECK(before == -1);
+  BOOST_CHECK(after == -5000);
+
+  decimal<4> d2(1.5121);
+  d2.unpack(before, after);
+  BOOST_CHECK(before == 1);
+  BOOST_CHECK(after == 5121);
+
+  decimal<4> d3(0.5121);
+  d3.unpack(before, after);
+  BOOST_CHECK(before == 0);
+  BOOST_CHECK(after == 5121);
+}
+
+BOOST_AUTO_TEST_CASE(decimalPack)
+{
+  using namespace dec;
+  decimal<4> d;
+  BOOST_CHECK(decimal<4>().pack(2,5121) == decimal<4>(2.5121));
+  BOOST_CHECK(d.pack(0,5121) == decimal<4>(0.5121));
+  BOOST_CHECK(d.pack(0,-5121) == decimal<4>(-0.5121));
+  BOOST_CHECK(d.pack(1,5121) == decimal<4>(1.5121));
+  BOOST_CHECK(d.pack(-1,-5121) == decimal<4>(-1.5121));
+}
