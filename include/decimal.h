@@ -5,7 +5,7 @@
 // Author:      Piotr Likus
 // Created:     03/01/2011
 // Last change: 29/07/2012
-// Version:     1.3
+// Version:     1.4
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -28,6 +28,7 @@
 
 #include <iosfwd>
 #include <iomanip>
+#include <sstream> 
 
 #ifndef DEC_EXTERNAL_LIMITS
 #ifndef __STDC_LIMIT_MACROS
@@ -280,10 +281,16 @@ public:
         return round(getAsXDouble());
     }
 
-    // returns two parts: before and after decimal point
+    /// returns two parts: before and after decimal point
     void unpack(int64 &beforeValue, int64 &afterValue) const {
       afterValue = m_value % DecimalFactor<Prec>::value;
       beforeValue = (m_value - afterValue) / DecimalFactor<Prec>::value;
+    }
+
+    /// combines two parts (before and after decimal point) into decimal value
+    decimal &pack(int64 beforeValue, int64 afterValue) {
+      m_value = beforeValue * DecimalFactor<Prec>::value + afterValue;
+      return *this;
     }
 
 protected:
@@ -291,10 +298,10 @@ protected:
     inline double getPrecFactorDouble() const { return static_cast<double>(DecimalFactor<Prec>::value); }
 
     // result = (value1 * value2) / divider
-    inline static int64 multDiv(int64 value1, int64 value2, int64 divider) 
+    inline static int64 multDiv(int64 value1, int64 value2, int64 divider)
     {
       if ((abs(value1) <= INT32_MAX) || (abs(value2) <= INT32_MAX))
-      { 
+      {
         // no-overflow version
         return
              round(
@@ -306,8 +313,8 @@ protected:
         // overflow can occur - use less precise version
         return
                round(
-                   static_cast<cross_float>(value1) 
-                   * 
+                   static_cast<cross_float>(value1)
+                   *
                    static_cast<cross_float>(value2)
                    /
                    static_cast<cross_float>(divider)
@@ -435,20 +442,39 @@ template <class charT, class traits, int prec>
   return os;
 }
 
-template <int prec> 
+template <int prec>
 std::string &toString(const decimal<prec> &arg, std::string &output) {
   using namespace std;
 
   ostringstream out;
   int64 before, after;
+  int sign;
+
   arg.unpack(before, after);
+  sign = 1;
+
+  if (before < 0)
+  {
+    sign = -1;
+    before = -before;
+  }
+
+  if (after < 0)
+  {
+    sign = -1;
+    after = -after;
+  }
+
+  if (sign < 0)
+    out << "-";
+ 
   out << before << ".";
   out << setw(arg.getDecimalPoints()) << setfill('0') << right << after;
   output = out.str();
   return output;
 }
 
-template <int prec> 
+template <int prec>
 std::string toString(const decimal<prec> &arg) {
   std::string res;
   toString(arg, res);
