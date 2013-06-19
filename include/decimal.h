@@ -29,6 +29,7 @@
 #include <iosfwd>
 #include <iomanip>
 #include <sstream> 
+#include <locale>
 
 #ifndef DEC_EXTERNAL_LIMITS
 #ifndef __STDC_LIMIT_MACROS
@@ -468,7 +469,8 @@ std::string &toString(const decimal<prec> &arg, std::string &output) {
   if (sign < 0)
     out << "-";
  
-  out << before << ".";
+  char dec_point = use_facet<numpunct<char> >(out.getloc()).decimal_point();
+  out << before << dec_point;
   out << setw(arg.getDecimalPoints()) << setfill('0') << right << after;
   output = out.str();
   return output;
