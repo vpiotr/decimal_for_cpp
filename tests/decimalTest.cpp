@@ -180,3 +180,17 @@ BOOST_AUTO_TEST_CASE(decimalPack)
   BOOST_CHECK(d.pack(1,5121) == decimal<4>(1.5121));
   BOOST_CHECK(d.pack(-1,-5121) == decimal<4>(-1.5121));
 }
+
+BOOST_AUTO_TEST_CASE(decimalString)
+{
+  using namespace dec;
+  decimal<4> d(4.1234);
+  std::string spos = toString(d);
+  BOOST_CHECK(d == fromString<decimal<4> >(spos));
+
+  d = d * decimal_cast<4>(-1);
+  BOOST_CHECK(d < decimal_cast<4>(0));
+
+  std::string sneg = toString(d);
+  BOOST_CHECK(d == fromString<decimal<4> >(sneg));
+}
