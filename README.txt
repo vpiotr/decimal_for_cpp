@@ -2,9 +2,9 @@ Purpose:     Decimal data type support, for COBOL-like fixed-point
              operations on currency/money values.
 Author:      Piotr Likus
 Created:     03/01/2011
-Modified:    12/06/2013
+Modified:    01/02/2014
 Licence:     BSD
-Version:     1.4
+Version:     1.5
 
 This data type is designed to perform calculation with on-fly  roundings
 &  to  support  correct  compare  function  (floating-point  compare  is
@@ -45,9 +45,12 @@ Example usage:
   // this should display something like "5210.640000"
 
 Directory structure:
-\doc     - documentation
+\doc     - documentation (licence etc.)
 \include - headers
 \test    - unit tests, Boost-based
+
+Code documentation can be generated using Doxygen:
+http://www.doxygen.org/
 
 Tested compilers:
 - VS2010 Express SP1
