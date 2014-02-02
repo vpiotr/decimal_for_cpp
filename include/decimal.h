@@ -32,13 +32,17 @@
 #include <locale>
 
 #ifndef DEC_EXTERNAL_LIMITS
+
 #ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS
-#include <stdint.h>
-#undef __STDC_LIMIT_MACROS
+#endif
+
+#if defined(__GXX_EXPERIMENTAL_CXX0X) || (__cplusplus >= 201103L)
+#include <cstdint>
 #else
 #include <stdint.h>
 #endif
+
 #endif
 
 namespace dec
