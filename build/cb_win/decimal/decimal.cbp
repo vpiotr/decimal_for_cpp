@@ -7,27 +7,29 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="..\..\..\bin\Debug\decimal" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\Debug\" />
+				<Option output="../../../bin/Debug/decimal" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add option="-std=c++11" />
 					<Add option="-g" />
-					<Add directory="..\..\..\..\..\libs\vs2010\boost" />
-					<Add directory="..\..\..\include" />
-					<Add directory="..\..\..\..\..\libs\vs2010\boost_local\include" />
+					<Add directory="../../../../../libs/cb/boost_1_57" />
+					<Add directory="../../../include" />
+					<Add directory="../../../../../libs/cb/boost_1_57/include" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="..\..\..\bin\Release\decimal" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\Release\" />
+				<Option output="../../../bin/Release/decimal" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
-					<Add directory="..\..\..\..\..\libs\vs2010\boost" />
-					<Add directory="..\..\..\include" />
-					<Add directory="..\..\..\..\..\libs\vs2010\boost_local\include" />
+					<Add option="-std=c++11" />
+					<Add directory="../../../../../libs/cb/boost_1_57" />
+					<Add directory="../../../include" />
+					<Add directory="../../../tests" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -35,11 +37,14 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-std=c++11" />
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="..\..\..\include\decimal.h" />
-		<Unit filename="..\..\..\tests\decimalTest.cpp" />
+		<Unit filename="../../../include/decimal.h" />
+		<Unit filename="../../../tests/decimalTest.ipp" />
+		<Unit filename="../../../tests/decimalTestIo.ipp" />
+		<Unit filename="../../../tests/runner.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
