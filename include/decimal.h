@@ -4,8 +4,8 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 01/02/2014
-// Version:     1.5
+// Last change: 25/01/2015
+// Version:     1.6
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -26,11 +26,25 @@
 ///   value = value / decimal_cast<2>(333);
 ///   cout << "Result is: " << value << endl;
 
+// ----------------------------------------------------------------------------
+// Config section
+// ----------------------------------------------------------------------------
+// - define DEC_EXTERNAL_INT64 if you do not want internal definition of "int64" data type
+//   in this case define "DEC_INT64" somewhere
+// - define DEC_EXTERNAL_ROUND if you do not want internal "round()" function
+// - define DEC_CROSS_DOUBLE if you want to use double (instead of xdouble) for cross-conversions
+// - define DEC_EXTERNAL_LIMITS to define by yourself INT32_MAX
+// - define DEC_NO_CPP11 if your compiler does not support C++11
+
 #include <iosfwd>
 #include <iomanip>
 #include <sstream>
 #include <locale>
 
+#ifndef DEC_NO_CPP11
+#include <cstdint>
+#define DEC_MAX_INT32 (std::numeric_limits<int32_t>::max())
+#else
 #ifndef DEC_EXTERNAL_LIMITS
 
 #ifndef __STDC_LIMIT_MACROS
@@ -45,26 +59,25 @@
 
 #endif
 
+#define DEC_MAX_INT32 INT32_MAX
+
+#endif
+
 namespace dec
 {
-
-// ----------------------------------------------------------------------------
-// Config section
-// ----------------------------------------------------------------------------
-// - define DEC_EXTERNAL_INT64 if you do not want internal definition of "int64" data type
-//   in this case define "DEC_INT64" somewhere
-// - define DEC_EXTERNAL_ROUND if you do not want internal "round()" function
-// - define DEC_CROSS_DOUBLE if you want to use double (intead of xdouble) for cross-conversions
-// - define DEC_EXTERNAL_LIMITS to define by yourself INT32_MAX
 
 // ----------------------------------------------------------------------------
 // Simple type definitions
 // ----------------------------------------------------------------------------
 #ifndef DEC_EXTERNAL_INT64
+#ifndef DEC_NO_CPP11
+typedef int64_t DEC_INT64;
+#else
 #if defined(_MSC_VER) || defined(__BORLANDC__)
 typedef signed __int64 DEC_INT64;
 #else
 typedef signed long long DEC_INT64;
+#endif
 #endif
 #endif
 
@@ -312,7 +325,7 @@ protected:
     // result = (value1 * value2) / divider
     inline static int64 multDiv(int64 value1, int64 value2, int64 divider)
     {
-      if ((abs(value1) <= INT32_MAX) || (abs(value2) <= INT32_MAX))
+      if ((abs(value1) <= DEC_MAX_INT32) || (abs(value2) <= DEC_MAX_INT32))
       {
         // no-overflow version
         return
@@ -424,13 +437,15 @@ decimal<Prec> decimal_cast(double arg)
 template < int Prec >
 decimal<Prec> decimal_cast(uint arg)
 {
-    return decimal<Prec>(static_cast<double>(arg));
+    decimal<Prec> result(arg);
+    return result;
 }
 
 template < int Prec >
 decimal<Prec> decimal_cast(int arg)
 {
-    return decimal<Prec>(static_cast<double>(arg));
+    decimal<Prec> result(arg);
+    return result;
 }
 
 /// Exports decimal to stream
