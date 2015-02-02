@@ -40,6 +40,7 @@
 #include <iomanip>
 #include <sstream>
 #include <locale>
+#include <limits>
 
 #ifndef DEC_NO_CPP11
 #include <cstdint>
