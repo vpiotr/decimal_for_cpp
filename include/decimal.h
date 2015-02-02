@@ -33,7 +33,7 @@
 //   in this case define "DEC_INT64" somewhere
 // - define DEC_EXTERNAL_ROUND if you do not want internal "round()" function
 // - define DEC_CROSS_DOUBLE if you want to use double (instead of xdouble) for cross-conversions
-// - define DEC_EXTERNAL_LIMITS to define by yourself INT32_MAX
+// - define DEC_EXTERNAL_LIMITS to define by yourself DEC_MAX_INT32
 // - define DEC_NO_CPP11 if your compiler does not support C++11
 
 #include <iosfwd>
@@ -41,11 +41,13 @@
 #include <sstream>
 #include <locale>
 
+// --> include headers for limits and int64_t
+
 #ifndef DEC_NO_CPP11
 #include <cstdint>
-#define DEC_MAX_INT32 (std::numeric_limits<int32_t>::max())
+#include <limits>
+
 #else
-#ifndef DEC_EXTERNAL_LIMITS
 
 #ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS
@@ -55,13 +57,22 @@
 #include <cstdint>
 #else
 #include <stdint.h>
-#endif
+#endif // defined
+#endif // DEC_NO_CPP11
 
-#endif
+// <--
 
+// --> define DEC_MAX_INT32 if required
+
+#ifndef DEC_EXTERNAL_LIMITS
+#ifndef DEC_NO_CPP11
+#define DEC_MAX_INT32 (std::numeric_limits<int32_t>::max())
+#else
 #define DEC_MAX_INT32 INT32_MAX
+#endif // DEC_NO_CPP11
+#endif // DEC_EXTERNAL_LIMITS
 
-#endif
+// <--
 
 namespace dec
 {
@@ -69,6 +80,8 @@ namespace dec
 // ----------------------------------------------------------------------------
 // Simple type definitions
 // ----------------------------------------------------------------------------
+
+// --> define DEC_INT64 if required
 #ifndef DEC_EXTERNAL_INT64
 #ifndef DEC_NO_CPP11
 typedef int64_t DEC_INT64;
@@ -79,7 +92,8 @@ typedef signed __int64 DEC_INT64;
 typedef signed long long DEC_INT64;
 #endif
 #endif
-#endif
+#endif // DEC_EXTERNAL_INT64
+// <--
 
 typedef DEC_INT64 int64;
 // type for storing currency value internally
