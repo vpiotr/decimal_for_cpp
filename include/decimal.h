@@ -494,8 +494,12 @@ void toStream(const decimal<prec> &arg, StreamType &output) {
     output << "-";
 
   const char dec_point = use_facet<numpunct<char> >(output.getloc()).decimal_point();
-  output << before << dec_point;
-  output << setw(arg.getDecimalPoints()) << setfill('0') << right << after;
+  output << before;
+  if(arg.getDecimalPoints() > 0)
+  {
+    output << dec_point;
+    output << setw(arg.getDecimalPoints()) << setfill('0') << right << after;
+  }
 }
 
 /// Converts stream of chars to decimal
