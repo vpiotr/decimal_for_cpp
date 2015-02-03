@@ -670,8 +670,7 @@ template <class charT, class traits, int prec>
   std::basic_ostream<charT, traits> &
     operator<<(std::basic_ostream<charT, traits> & os, const decimal<prec> & d)
 {
-  std::string helper;
-  os << toString(d, helper);
+  toStream(d, os);
   return os;
 }
 
