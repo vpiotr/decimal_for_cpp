@@ -66,7 +66,7 @@
 
 #ifndef DEC_EXTERNAL_LIMITS
 #ifndef DEC_NO_CPP11
-#define DEC_MAX_INT32 (std::numeric_limits<int32_t>::max())
+#define DEC_MAX_INT32 ((std::numeric_limits<int32_t>::max)())
 #else
 #define DEC_MAX_INT32 INT32_MAX
 #endif // DEC_NO_CPP11
