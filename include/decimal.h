@@ -525,7 +525,12 @@ bool fromStream(StreamType &input, decimal<prec> &output) {
     int sign = 1;
 
     enum StateEnum { IN_SIGN, IN_BEFORE_FIRST_DIG, IN_BEFORE_DEC, IN_AFTER_DEC, IN_END} state = IN_SIGN;
-    const char dec_point = use_facet<numpunct<char> >(input.getloc()).decimal_point();
+    const numpunct<char> *facet = has_facet<numpunct<char> >(input.getloc())?
+        &use_facet<numpunct<char> >(input.getloc()):
+        NULL;
+    const char dec_point = (facet != NULL)?facet->decimal_point():'.';
+    const bool thousands_grouping = (facet != NULL)?(!facet->grouping().empty()):false;
+    const char thousands_sep = (facet != NULL)?facet->thousands_sep():',';
     enum ErrorCodes { ERR_WRONG_CHAR = -1, ERR_NO_DIGITS = -2, ERR_WRONG_STATE = -3, ERR_STREAM_GET_ERROR = -4 };
 
     before = after = 0;
@@ -576,6 +581,8 @@ bool fromStream(StreamType &input, decimal<prec> &output) {
                 digitsCount++;
             } else if (c == dec_point) {
                 state = IN_AFTER_DEC;
+            } else if (thousands_grouping && c == thousands_sep) {
+                ; // ignore the char
             } else {
                 state = IN_END;
             }
