@@ -236,6 +236,16 @@ public:
       return *this;
     }
 
+    const decimal operator+() const {
+       return *this;
+    }
+
+    const decimal operator-() const {
+       decimal result = *this;
+       result.m_value = -result.m_value;
+       return result;
+    }
+
     const decimal operator-(const decimal &rhs) const {
         decimal result = *this;
         result.m_value -= rhs.m_value;
