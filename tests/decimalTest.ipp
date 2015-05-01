@@ -90,6 +90,12 @@ BOOST_AUTO_TEST_CASE(decimalArithmetic)
    BOOST_CHECK(balance.abs() == dec::decimal2(4.45));
 
    BOOST_CHECK(balance.getAsInteger() == -4);
+   
+   balance = +balance;
+   BOOST_CHECK(balance == dec::decimal2(-4.45));
+
+   balance = -balance;
+   BOOST_CHECK(balance == dec::decimal2(4.45));
 
    BOOST_TEST_MESSAGE("balance-end: " << toString(balance));
 }
