@@ -154,6 +154,68 @@ BOOST_AUTO_TEST_CASE(decimalRounding)
    BOOST_CHECK(longDec1 == longDec2);
 }
 
+BOOST_AUTO_TEST_CASE(decimalHighEndVals)
+{
+   // with decimal<16> we need to provide constants with strings not floating points.
+   dec::decimal<16> a;
+   dec::decimal<16> b;
+   dec::decimal<16> c;
+
+   a = dec::decimal<16>("1.1111111111111111");
+   b = dec::decimal<16>(2.0);
+
+   c = a + b;
+   BOOST_CHECK(c == dec::decimal<16>("3.1111111111111111"));
+
+   c = a - b;
+   BOOST_CHECK(c == dec::decimal<16>("-0.8888888888888889"));   
+
+   c = a * b;
+   BOOST_CHECK(c == dec::decimal<16>("2.2222222222222222"));
+
+   c = a / b;
+   BOOST_CHECK(c == dec::decimal<16>("0.5555555555555556"));
+}
+
+BOOST_AUTO_TEST_CASE(decimalUHighEndVals)
+{
+   dec::decimal<17> a;
+   dec::decimal<17> b;
+   dec::decimal<17> c;
+
+   a = dec::decimal<17>("1.1");
+   b = dec::decimal<17>("2.0");
+
+   c = a + b;
+   BOOST_CHECK(c == dec::decimal<17>("3.1"));
+
+   c = a - b;
+   BOOST_CHECK(c ==dec::decimal<17>("-0.9"));
+
+   c = a * b;
+   BOOST_CHECK(c == dec::decimal<17>("2.2"));
+
+   c = a / b;
+   BOOST_CHECK(c == dec::decimal<17>("0.55"));
+}
+
+// test with values internally > 2^32
+BOOST_AUTO_TEST_CASE(decimalMidOverflow)
+{
+   dec::decimal<6> a;
+   dec::decimal<6> b;
+   dec::decimal<6> c;
+   dec::decimal<6> expected;
+
+   a = dec::decimal<6>("2305843009213.693952"); // 2^61
+   b = dec::decimal<6>("2.000001"); // value < 2^32
+
+   c = a * b;
+   expected = dec::decimal<6>("4611688324270.397118");
+
+   // overflow, so calculation via floating point, error will be <> 0, but should be small
+   BOOST_CHECK((c - expected).abs() < dec::decimal<6>("1.0"));
+}
 
 BOOST_AUTO_TEST_CASE(decimalUnpack)
 {

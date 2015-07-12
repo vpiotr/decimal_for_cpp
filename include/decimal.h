@@ -4,8 +4,8 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 25/01/2015
-// Version:     1.6
+// Last change: 12/07/2015
+// Version:     1.7
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -62,13 +62,17 @@
 
 // <--
 
-// --> define DEC_MAX_INT32 if required
+// --> define DEC_MAX_INTxx, DEC_MIN_INTxx if required
 
 #ifndef DEC_EXTERNAL_LIMITS
 #ifndef DEC_NO_CPP11
-#define DEC_MAX_INT32 ((std::numeric_limits<int32_t>::max)())
+//#define DEC_MAX_INT32 ((std::numeric_limits<int32_t>::max)())
+#define DEC_MAX_INT64 ((std::numeric_limits<int64_t>::max)())
+#define DEC_MIN_INT64 ((std::numeric_limits<int64_t>::min)())
 #else
-#define DEC_MAX_INT32 INT32_MAX
+//#define DEC_MAX_INT32 INT32_MAX
+#define DEC_MAX_INT64 INT64_MAX
+#define DEC_MIN_INT64 INT64_MIN
 #endif // DEC_NO_CPP11
 #endif // DEC_EXTERNAL_LIMITS
 
@@ -136,7 +140,8 @@ inline int64 round(double value) {
   else
     val1 = value + 0.5;
 
-  int64 intPart = int64(val1);
+  int64 intPart = static_cast<int64>(val1);
+
   return intPart;
 }
 
@@ -148,7 +153,8 @@ inline int64 round(xdouble value) {
   else
     val1 = value + 0.5;
 
-  int64 intPart = int64(val1);
+  int64 intPart = static_cast<int64>(val1);
+
   return intPart;
 }
 
@@ -174,6 +180,7 @@ public:
     explicit decimal(double value) { init(value); }
     explicit decimal(float value) { init(value); }
     explicit decimal(int64 value, int64 precFactor) { initWithPrec(value, precFactor); }
+    explicit decimal(const std::string &value) { fromString(value, *this); }
 
     ~decimal() {}
 
@@ -346,29 +353,81 @@ protected:
     inline xdouble getPrecFactorXDouble() const { return static_cast<xdouble>(DecimalFactor<Prec>::value); }
     inline double getPrecFactorDouble() const { return static_cast<double>(DecimalFactor<Prec>::value); }
 
-    // result = (value1 * value2) / divider
-    inline static int64 multDiv(int64 value1, int64 value2, int64 divider)
+    // calculate greatest common divisor
+    static int64 gcd(int64 a, int64 b)
     {
-      if ((abs(value1) <= DEC_MAX_INT32) || (abs(value2) <= DEC_MAX_INT32))
+        int64 c;
+        while (a != 0) {
+            c = a; 
+            a = b % a;  
+            b = c;
+        }
+        return b;
+    }
+
+    // count number of bits required to store given value
+    static int bitcnt(int64 value) {
+        int res = 0;
+        while (value != 0) {
+            value = value >> 1;
+            ++res;
+        }
+        return res;
+    }
+
+    // result = (value1 * value2) / divisor
+    inline static int64 multDiv(int64 value1, int64 value2, int64 divisor)
+    {
+      const int DEC_INT64_BITCNT_NO_SIGN = 63;
+
+      // minimalize value1 & divisor
+      if ((value1 != 0) && (divisor != 0))
       {
-        // no-overflow version
-        return
-             round(
-                 static_cast<cross_float>(value1 * value2)
-                 /
-                 static_cast<cross_float>(divider)
-             );
-      } else {
-        // overflow can occur - use less precise version
-        return
+          int64 c = gcd(value1, divisor);
+          if (c != 1) {
+              value1 /= c;
+              divisor /= c;
+          }
+      }
+
+      // minimalize value2 & divisor
+      if ((value2 != 0) && (divisor != 0))
+      {
+          int64 c = gcd(value2, divisor);
+          if (c != 1) {
+              value2 /= c;
+              divisor /= c;
+          }
+      }
+
+      int bitCnt1 = bitcnt(abs(value1));
+      int bitCnt2 = bitcnt(abs(value2));
+
+      if (bitCnt1 + bitCnt2 < DEC_INT64_BITCNT_NO_SIGN)
+      {
+          // no-overflow version
+          int64 divisorCorr = abs(divisor) / 2;
+          int64 midRes = value1 * value2;
+
+          if (midRes >= 0) {
+              if (DEC_MAX_INT64 - midRes >= divisorCorr)
+                return  (midRes + divisorCorr) / divisor;
+          }
+          else {
+              if (-(DEC_MIN_INT64 - midRes) >= divisorCorr)
+                return  (midRes - divisorCorr) / divisor;
+          }
+      } 
+      
+      // overflow can occur - use less precise version
+      return
                round(
                    static_cast<cross_float>(value1)
                    *
                    static_cast<cross_float>(value2)
                    /
-                   static_cast<cross_float>(divider)
+                   static_cast<cross_float>(divisor)
                );
-      }
     }
 
     void init(const decimal &src) { m_value = src.m_value; }
@@ -703,6 +762,12 @@ T fromString (const std::string &str) {
     T t;
     is >> t;
     return t;
+}
+
+template <typename T>
+void fromString(const std::string &str, T &out) {
+    std::istringstream is(str);
+    is >> out;
 }
 
 } // namespace
