@@ -2,9 +2,9 @@ Purpose:     Decimal data type support, for COBOL-like fixed-point
              operations on currency/money values.
 Author:      Piotr Likus
 Created:     03/01/2011
-Modified:    25/01/2015
+Modified:    12/07/2015
 Licence:     BSD
-Version:     1.6
+Version:     1.7
 
 This data type is designed to perform calculation with on-fly  roundings
 &  to  support  correct  compare  function  (floating-point  compare  is
@@ -53,7 +53,7 @@ Code documentation can be generated using Doxygen:
 http://www.doxygen.org/
 
 Tested compilers:
-- VS2010 Express SP1
+- VS2013 Community Update 4
 - Code::Blocks 13.12 + MinGW + gcc 4.8.1
 
 Uses C++11 by default, define DEC_NO_CPP11 symbol if your compiler does not support this standard.
