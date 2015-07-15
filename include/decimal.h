@@ -131,9 +131,10 @@ template <> struct DecimalFactor<1> {
 
 #ifndef DEC_EXTERNAL_ROUND
 
-// round value - convert to int64
-inline int64 round(double value) {
-  double val1;
+// round floating point value and convert to int64
+template<class T>
+inline int64 round(T value) {
+  T val1;
 
   if (value < 0.0)
     val1 = value - 0.5;
@@ -145,25 +146,59 @@ inline int64 round(double value) {
   return intPart;
 }
 
-inline int64 round(xdouble value) {
-  xdouble val1;
+// calculate output = round(a / b), where output, a, b are int64
+inline bool div_rounded(int64 &output, int64 a, int64 b) {
+    int64 divisorCorr = std::abs(b) / 2;
+    if (a >= 0) {
+        if (DEC_MAX_INT64 - a >= divisorCorr) {
+            output = (a + divisorCorr) / b;
+            return true;
+        }
+    }
+    else {
+        if (-(DEC_MIN_INT64 - a) >= divisorCorr) {
+            output = (a - divisorCorr) / b;
+            return true;
+        }
+    }
 
-  if (value < 0.0)
-    val1 = value - 0.5;
-  else
-    val1 = value + 0.5;
-
-  int64 intPart = static_cast<int64>(val1);
-
-  return intPart;
+    return false;
 }
 
 #endif // DEC_EXTERNAL_ROUND
 
-template <int Prec>
+// default rounding policy - to nearest integer, away from zero
+class def_round_policy {
+public:
+    template<class T>
+    static int64 round(T value) { 
+        return dec::round(value);  
+    }
+
+    static bool div_rounded(int64 &output, int64 a, int64 b) {
+        return dec::div_rounded(output, a, b);
+    }
+};
+
+// no-rounding policy (decimal places stripped)
+class null_round_policy {
+public:
+    template<class T>
+    static int64 round(T value) {
+        return static_cast<int64>(value);
+    }
+
+    static bool div_rounded(int64 &output, int64 a, int64 b) {
+        output = a / b;
+        return true;
+    }
+};
+
+template <int Prec, class RoundPolicy = def_round_policy>
 class decimal {
 public:
     typedef dec_storage_t raw_data_t;
+    enum { decimal_points = Prec };
 
 #ifdef DEC_CROSS_DOUBLE
     typedef double cross_float;
@@ -184,8 +219,8 @@ public:
 
     ~decimal() {}
 
-    inline int64 getPrecFactor() const { return DecimalFactor<Prec>::value; }
-    inline int getDecimalPoints() const { return Prec; }
+    static int64 getPrecFactor() { return DecimalFactor<Prec>::value; }
+    static int getDecimalPoints() { return Prec; }
 
     decimal & operator=(const decimal &rhs) {
         if (&rhs != this) m_value = rhs.m_value;
@@ -204,7 +239,7 @@ public:
 
     decimal & operator=(double rhs)
     {
-        m_value = round(static_cast<double>(DecimalFactor<Prec>::value) * rhs);
+        m_value = RoundPolicy::round(static_cast<double>(DecimalFactor<Prec>::value) * rhs);
         return *this;
     }
 
@@ -303,7 +338,7 @@ public:
     void setAsDouble(double value)
     {
        double nval = value * getPrecFactorDouble();
-       m_value = round(nval);
+       m_value = RoundPolicy::round(nval);
     }
 
     xdouble getAsXDouble() const { return static_cast<xdouble>(m_value) / getPrecFactorXDouble(); }
@@ -311,7 +346,7 @@ public:
     void setAsXDouble(xdouble value)
     {
        xdouble nval = value * getPrecFactorXDouble();
-       m_value = round(nval);
+       m_value = RoundPolicy::round(nval);
     }
 
     // returns integer value = real_value * (10 ^ precision)
@@ -327,7 +362,7 @@ public:
     }
 
     int64 getAsInteger() const {
-        return round(getAsXDouble());
+        return RoundPolicy::round(getAsXDouble());
     }
 
     /// returns two parts: before and after decimal point
@@ -406,22 +441,16 @@ protected:
       if (bitCnt1 + bitCnt2 < DEC_INT64_BITCNT_NO_SIGN)
       {
           // no-overflow version
-          int64 divisorCorr = abs(divisor) / 2;
           int64 midRes = value1 * value2;
 
-          if (midRes >= 0) {
-              if (DEC_MAX_INT64 - midRes >= divisorCorr)
-                return  (midRes + divisorCorr) / divisor;
-          }
-          else {
-              if (-(DEC_MIN_INT64 - midRes) >= divisorCorr)
-                return  (midRes - divisorCorr) / divisor;
-          }
+          int64 result;
+          if (RoundPolicy::div_rounded(result, midRes, divisor))
+              return result;
       } 
       
       // overflow can occur - use less precise version
       return
-               round(
+          RoundPolicy::round(
                    static_cast<cross_float>(value1)
                    *
                    static_cast<cross_float>(value2)
@@ -436,14 +465,14 @@ protected:
     void init(int64 value) { m_value = DecimalFactor<Prec>::value * value; }
     void init(xdouble value) {
       m_value =
-         round(
+          RoundPolicy::round(
              static_cast<xdouble>(DecimalFactor<Prec>::value) *
              value
          );
     }
     void init(double value) {
       m_value =
-         round(
+          RoundPolicy::round(
              static_cast<double>(DecimalFactor<Prec>::value) *
              value
          );
@@ -451,7 +480,7 @@ protected:
 
     void init(float value) {
       m_value =
-         round(
+          RoundPolicy::round(
              static_cast<double>(DecimalFactor<Prec>::value) *
              static_cast<double>(value)
          );
@@ -465,7 +494,7 @@ protected:
         } else {
         // conversion
           m_value =
-             round(
+              RoundPolicy::round(
                  static_cast<cross_float>(value)
                  *
                  (
@@ -587,8 +616,8 @@ void toStream(const decimal<prec> &arg, StreamType &output) {
 /// \param[in] input input stream
 /// \param[out] output decimal value, 0 on error
 /// \result Returns true if conversion succeeded
-template <int prec, typename StreamType>
-bool fromStream(StreamType &input, decimal<prec> &output) {
+template <typename decimal_type, typename StreamType>
+bool fromStream(StreamType &input, decimal_type &output) {
     using namespace std;
     int64 before, after;
     int sign = 1;
@@ -660,7 +689,7 @@ bool fromStream(StreamType &input, decimal<prec> &output) {
             if ((c >= '0') && (c <= '9')) {
                 after = 10 * after + static_cast<int>(c - '0');
                 afterDigitCount++;
-                if (afterDigitCount >= prec)
+                if (afterDigitCount >= decimal_type::decimal_points)
                    state = IN_END;
             } else {
                 state = IN_END;
@@ -681,7 +710,7 @@ bool fromStream(StreamType &input, decimal<prec> &output) {
     if (afterDigitCount > 0)
     {
        // convert 4 to 4000 for decimal<4>
-       int leftPow = prec - afterDigitCount;
+       int leftPow = decimal_type::decimal_points - afterDigitCount;
        while (leftPow > 0)
        {
            after *= 10;
@@ -732,12 +761,12 @@ std::string toString(const decimal<prec> &arg) {
 }
 
 // input
-template <class charT, class traits, int prec>
+template <class charT, class traits, class decimal_type>
   std::basic_istream<charT, traits> &
-    operator>>(std::basic_istream<charT, traits> & is, decimal<prec> & d)
+      operator>>(std::basic_istream<charT, traits> & is, decimal_type & d)
 {
-  if (!fromStream<prec>(is, d))
-    d.setUnbiased(0);
+  if (!fromStream(is, d))
+     d.setUnbiased(0);
   return is;
 }
 

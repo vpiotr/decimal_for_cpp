@@ -217,6 +217,30 @@ BOOST_AUTO_TEST_CASE(decimalMidOverflow)
    BOOST_CHECK((c - expected).abs() < dec::decimal<6>("1.0"));
 }
 
+BOOST_AUTO_TEST_CASE(decimalDefRoundPolicy)
+{
+  using namespace dec;
+  decimal<1, def_round_policy> a("0.5");
+  decimal<1, def_round_policy> b("2");
+  decimal<1, def_round_policy> c;
+
+  c = a / b;
+  dec::decimal<1, def_round_policy> expected("0.3");
+  BOOST_CHECK(c == expected);
+}
+
+BOOST_AUTO_TEST_CASE(decimalNoRoundPolicy)
+{
+  using namespace dec;
+  decimal<1, null_round_policy> a("0.5");
+  decimal<1, null_round_policy> b("2");
+  decimal<1, null_round_policy> c;
+
+  c = a / b;
+  dec::decimal<1, null_round_policy> expected("0.2");
+  BOOST_CHECK(c == expected);
+}
+
 BOOST_AUTO_TEST_CASE(decimalUnpack)
 {
   using namespace dec;
