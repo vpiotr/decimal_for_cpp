@@ -9,6 +9,13 @@
 
 #include "decimal.h"
 
+#include <boost/predef.h>
+#if BOOST_OS_WINDOWS
+#include <climits>
+#else
+#include <cstdint>
+#endif
+
 /*
 template <typename T>
 std::string toString(const T &arg) {
@@ -25,6 +32,14 @@ T fromString (const std::string &str) {
     return t;
 }
 */
+
+BOOST_AUTO_TEST_CASE(dec2_max_unsigned_int_ctor)
+{
+    uint32_t uint32_max = std::numeric_limits<uint32_t>::max)();
+    CHECK_EQ(toString(dec::decimal2(uint32_max)), "4294967295.00");
+    CHECK_EQ(toString(dec::decimal4(uint32_max)), "4294967295.0000");
+    CHECK_EQ(toString(dec::decimal6(uint32_max)), "4294967295.000000");
+}
 
 BOOST_AUTO_TEST_CASE(decimalArithmetic)
 {
