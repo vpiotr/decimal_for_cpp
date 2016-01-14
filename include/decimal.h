@@ -460,7 +460,7 @@ protected:
     }
 
     void init(const decimal &src) { m_value = src.m_value; }
-    void init(uint value) { m_value = DecimalFactor<Prec>::value * static_cast<int>(value); }
+    void init(uint value) { m_value = DecimalFactor<Prec>::value * value; }
     void init(int value) { m_value = DecimalFactor<Prec>::value * value; }
     void init(int64 value) { m_value = DecimalFactor<Prec>::value * value; }
     void init(xdouble value) {
