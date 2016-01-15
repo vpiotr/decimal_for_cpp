@@ -4,8 +4,8 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 12/07/2015
-// Version:     1.7
+// Last change: 15/01/2016
+// Version:     1.8
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -361,8 +361,11 @@ public:
             return (decimal<Prec>(0) - *this);
     }
 
+    /// returns value rounded to integer using active rounding policy
     int64 getAsInteger() const {
-        return RoundPolicy::round(getAsXDouble());
+        int64 result;
+        RoundPolicy::div_rounded(result, m_value, DecimalFactor<Prec>::value);
+        return result;
     }
 
     /// returns two parts: before and after decimal point
@@ -460,7 +463,7 @@ protected:
     }
 
     void init(const decimal &src) { m_value = src.m_value; }
-    void init(uint value) { m_value = DecimalFactor<Prec>::value * static_cast<int>(value); }
+    void init(uint value) { m_value = DecimalFactor<Prec>::value * value; }
     void init(int value) { m_value = DecimalFactor<Prec>::value * value; }
     void init(int64 value) { m_value = DecimalFactor<Prec>::value * value; }
     void init(xdouble value) {

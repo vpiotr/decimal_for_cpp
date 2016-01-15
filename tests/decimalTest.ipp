@@ -8,15 +8,16 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "decimal.h"
+#include <boost/integer_traits.hpp>
 
-/*
 template <typename T>
 std::string toString(const T &arg) {
     std::ostringstream	out;
-    out << arg.getAsDouble();
+    out << arg;
     return(out.str());
 }
 
+/*
 template <typename T>
 T fromString (const std::string &str) {
     std::istringstream is(str);
@@ -197,6 +198,34 @@ BOOST_AUTO_TEST_CASE(decimalUHighEndVals)
 
    c = a / b;
    BOOST_CHECK(c == dec::decimal<17>("0.55"));
+}
+
+BOOST_AUTO_TEST_CASE(decimalMaxUIntCtor)
+{
+  unsigned int uint_max = boost::integer_traits<unsigned int>::const_max;
+  std::string uint_max_txt = toString(uint_max);
+  dec::decimal<2> a(uint_max);
+  BOOST_REQUIRE_EQUAL( a, dec::decimal<2>(uint_max_txt) );
+  BOOST_REQUIRE_EQUAL( a.getAsInteger(), uint_max);
+}
+
+BOOST_AUTO_TEST_CASE(decimalAsInteger)
+{
+   // rounded value
+   dec::decimal<6> a;
+   a = dec::decimal<6>("2305843009213.693952"); 
+   dec::DEC_INT64 expectedValue = 2305843009214;
+   BOOST_REQUIRE_EQUAL( a.getAsInteger(), expectedValue);
+
+   // int64 value (>0)
+   expectedValue = 23058430092136939;
+   dec::decimal<1> b = dec::decimal<1>(toString(expectedValue)); 
+   BOOST_REQUIRE_EQUAL( b.getAsInteger(), expectedValue);
+
+   // int64 value (<0)
+   expectedValue = -23058430092136939;
+   dec::decimal<1> c = dec::decimal<1>(toString(expectedValue)); 
+   BOOST_REQUIRE_EQUAL( c.getAsInteger(), expectedValue);
 }
 
 // test with values internally > 2^32
