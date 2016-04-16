@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(decimalArithmetic)
    BOOST_CHECK(balance.abs() == dec::decimal2(4.45));
 
    BOOST_CHECK(balance.getAsInteger() == -4);
-   
+
    balance = +balance;
    BOOST_CHECK(balance == dec::decimal2(-4.45));
 
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(decimalRounding)
    BOOST_CHECK(balance == dec::decimal2(13111.22));
 
    // test serialization
-   dec::decimal<12> longDec1(6321311.121761616789);
+   dec::decimal<12> longDec1("6321311.121761616789");
    dec::decimal<12> longDec2;
 
    std::string s = toString(longDec1);
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(decimalRounding)
    BOOST_TEST_MESSAGE("longDec1: " << longDec1);
    BOOST_TEST_MESSAGE("longDec1 as string: " << s);
    BOOST_TEST_MESSAGE("longDec2: " << longDec2);
-   BOOST_CHECK(longDec1 == longDec2);
+   BOOST_REQUIRE_EQUAL(longDec1, longDec2);
 }
 
 BOOST_AUTO_TEST_CASE(decimalHighEndVals)
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(decimalHighEndVals)
    BOOST_CHECK(c == dec::decimal<16>("3.1111111111111111"));
 
    c = a - b;
-   BOOST_CHECK(c == dec::decimal<16>("-0.8888888888888889"));   
+   BOOST_CHECK(c == dec::decimal<16>("-0.8888888888888889"));
 
    c = a * b;
    BOOST_CHECK(c == dec::decimal<16>("2.2222222222222222"));
@@ -213,18 +213,18 @@ BOOST_AUTO_TEST_CASE(decimalAsInteger)
 {
    // rounded value
    dec::decimal<6> a;
-   a = dec::decimal<6>("2305843009213.693952"); 
+   a = dec::decimal<6>("2305843009213.693952");
    dec::DEC_INT64 expectedValue = 2305843009214;
    BOOST_REQUIRE_EQUAL( a.getAsInteger(), expectedValue);
 
    // int64 value (>0)
    expectedValue = 23058430092136939;
-   dec::decimal<1> b = dec::decimal<1>(toString(expectedValue)); 
+   dec::decimal<1> b = dec::decimal<1>(toString(expectedValue));
    BOOST_REQUIRE_EQUAL( b.getAsInteger(), expectedValue);
 
    // int64 value (<0)
    expectedValue = -23058430092136939;
-   dec::decimal<1> c = dec::decimal<1>(toString(expectedValue)); 
+   dec::decimal<1> c = dec::decimal<1>(toString(expectedValue));
    BOOST_REQUIRE_EQUAL( c.getAsInteger(), expectedValue);
 }
 
@@ -301,12 +301,24 @@ BOOST_AUTO_TEST_CASE(decimalPack)
   using namespace dec;
   decimal<4> d;
   BOOST_CHECK(decimal<4>().pack(2,5121) == decimal<4>(2.5121));
+  BOOST_CHECK(d.pack(1,1) == decimal<4>("1.0001"));
+  BOOST_CHECK(d.pack(1,1000) == decimal<4>("1.1"));
   BOOST_CHECK(d.pack(0,5121) == decimal<4>(0.5121));
   BOOST_CHECK(d.pack(0,-5121) == decimal<4>(-0.5121));
   BOOST_CHECK(d.pack(1,5121) == decimal<4>(1.5121));
+  BOOST_CHECK(d.pack(-1,0) == decimal<4>(-1.0));
   BOOST_CHECK(d.pack(-1,-5121) == decimal<4>(-1.5121));
   BOOST_CHECK(d.pack(-1,5121) != decimal<4>(-1.5121));
   BOOST_CHECK(d.pack(1,-5121) != decimal<4>(-1.5121));
+  // trimming (no rounding) for default pack
+  BOOST_CHECK(d.pack(1,51210) != decimal<4>("1.5121"));
+  BOOST_CHECK(d.pack(1,51215) != decimal<4>("1.5121"));
+  // pack with rounding
+  BOOST_CHECK(decimal_cast<4>(decimal<5>().pack(1,51215)) == decimal<4>("1.5122"));
+  BOOST_CHECK(d.pack_rounded<5>(1,51216) == decimal<4>("1.5122"));
+  BOOST_CHECK(d.pack_rounded<5>(1,51215) == decimal<4>("1.5122"));
+  BOOST_CHECK(d.pack_rounded<5>(1,51214) == decimal<4>("1.5121"));
+  BOOST_CHECK(d.pack_rounded<5>(1,51211) == decimal<4>("1.5121"));
 }
 
 BOOST_AUTO_TEST_CASE(decimalZeroPrec)
@@ -318,7 +330,7 @@ BOOST_AUTO_TEST_CASE(decimalZeroPrec)
   BOOST_CHECK(decimal<0>().pack(25121,0) == decimal<0>(25121));
   BOOST_CHECK(d.pack(5121,0) == decimal<0>(5121));
 
-  // trimming
+  // trimming (no rounding in pack)
   BOOST_CHECK(decimal<0>().pack(2,5121) == decimal<0>(2));
   BOOST_CHECK(d.pack(0,5121) == decimal<0>(0));
   BOOST_CHECK(d.pack(0,-5121) == decimal<0>(0));
@@ -326,7 +338,7 @@ BOOST_AUTO_TEST_CASE(decimalZeroPrec)
   BOOST_CHECK(d.pack(-1,-5121) == decimal<0>(-1));
   BOOST_CHECK(d.pack(-1,5121) == decimal<0>(-1));
 
-  // rounding
+  // for rounding use decimal_cast from source prec
   d = decimal_cast<0>(decimal<4>().pack(-1,-5121));
   BOOST_CHECK(d == decimal<0>(-2));
 }
@@ -335,9 +347,17 @@ BOOST_AUTO_TEST_CASE(decimalString)
 {
   using namespace dec;
   decimal<4> d(4.1234);
-  std::string spos = toString(d);
-  BOOST_CHECK(d == fromString<decimal<4> >(spos));
+  std::string dTxt = toString(d);
+  BOOST_CHECK(d == fromString<decimal<4> >(dTxt));
 
+  // fromString converts with rounding
+  BOOST_CHECK(d == decimal<4>().pack(4,1234));
+  BOOST_CHECK(d == fromString<decimal<4> >("4.1234"));
+  BOOST_CHECK(d == fromString<decimal<4> >("4.12341"));
+  BOOST_CHECK(d != fromString<decimal<4> >("4.12345"));
+  BOOST_CHECK(decimal<5>().pack(4,12341) == fromString<decimal<5> >("4.12341"));
+
+  // test negative values
   d = d * decimal_cast<4>(-1);
   BOOST_CHECK(d < decimal_cast<4>(0));
 

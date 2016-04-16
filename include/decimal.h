@@ -4,8 +4,8 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 15/01/2016
-// Version:     1.8
+// Last change: 16/04/2016
+// Version:     1.9
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -106,6 +106,7 @@ typedef unsigned int uint;
 // xdouble is an "extended double" - can be long double, __float128, _Quad - as you wish
 typedef long double xdouble;
 
+
 // ----------------------------------------------------------------------------
 // Forward class definitions
 // ----------------------------------------------------------------------------
@@ -162,17 +163,18 @@ inline bool div_rounded(int64 &output, int64 a, int64 b) {
         }
     }
 
+    output = 0;
     return false;
 }
 
 #endif // DEC_EXTERNAL_ROUND
 
-// default rounding policy - to nearest integer, away from zero
+// default rounding policy - to nearest integer
 class def_round_policy {
 public:
     template<class T>
-    static int64 round(T value) { 
-        return dec::round(value);  
+    static int64 round(T value) {
+        return dec::round(value);
     }
 
     static bool div_rounded(int64 &output, int64 a, int64 b) {
@@ -193,6 +195,8 @@ public:
         return true;
     }
 };
+
+enum { max_decimal_points = 18 };
 
 template <int Prec, class RoundPolicy = def_round_policy>
 class decimal {
@@ -368,15 +372,18 @@ public:
         return result;
     }
 
-    /// returns two parts: before and after decimal point
+    /// Returns two parts: before and after decimal point
+    /// For negative values both numbers are negative or zero.
     void unpack(int64 &beforeValue, int64 &afterValue) const {
       afterValue = m_value % DecimalFactor<Prec>::value;
       beforeValue = (m_value - afterValue) / DecimalFactor<Prec>::value;
     }
 
-    /// Combines two parts (before and after decimal point) into decimal value
-    /// \param[in] before value before decimal point
-    /// \param[in] after value after decimal point multiplied by 10^prec
+    /// Combines two parts (before and after decimal point) into decimal value.
+    /// Both input values have to have the same sign for correct results.
+    /// Does not perform any rounding or input validation - afterValue must be less than 10^prec.
+    /// \param[in] beforeValue value before decimal point
+    /// \param[in] afterValue value after decimal point multiplied by 10^prec
     /// \result Returns *this
     decimal &pack(int64 beforeValue, int64 afterValue) {
       if (Prec > 0) {
@@ -387,6 +394,17 @@ public:
       return *this;
     }
 
+    /// Version of pack() with rounding, sourcePrec specifies precision of source values.
+    /// See also @pack.
+    template<int sourcePrec>
+    decimal &pack_rounded(int64 beforeValue, int64 afterValue) {
+      decimal<sourcePrec> temp;
+      temp.pack(beforeValue, afterValue);
+      decimal<Prec> result(temp.getUnbiased(), temp.getPrecFactor());
+
+      *this = result;
+      return *this;
+    }
 protected:
     inline xdouble getPrecFactorXDouble() const { return static_cast<xdouble>(DecimalFactor<Prec>::value); }
     inline double getPrecFactorDouble() const { return static_cast<double>(DecimalFactor<Prec>::value); }
@@ -396,8 +414,8 @@ protected:
     {
         int64 c;
         while (a != 0) {
-            c = a; 
-            a = b % a;  
+            c = a;
+            a = b % a;
             b = c;
         }
         return b;
@@ -449,8 +467,8 @@ protected:
           int64 result;
           if (RoundPolicy::div_rounded(result, midRes, divisor))
               return result;
-      } 
-      
+      }
+
       // overflow can occur - use less precise version
       return
           RoundPolicy::round(
@@ -603,27 +621,12 @@ void toStream(const decimal<prec> &arg, StreamType &output) {
   }
 }
 
-/// Converts stream of chars to decimal
-/// Handles the following formats ('.' is selected from locale info):
-/// \code
-/// 123
-/// -123
-/// 123.0
-/// -123.0
-/// 123.
-/// .123
-/// 0.
-/// -.123
-/// \endcode
-/// Spaces and tabs on the front are ignored.
-/// \param[in] input input stream
-/// \param[out] output decimal value, 0 on error
-/// \result Returns true if conversion succeeded
-template <typename decimal_type, typename StreamType>
-bool fromStream(StreamType &input, decimal_type &output) {
+namespace details {
+
+/// Extract values from stream ready to be packed to decimal
+template <typename StreamType>
+bool parse_unpacked(StreamType &input, int &sign, int64 &before, int64 &after, int &decimalDigits) {
     using namespace std;
-    int64 before, after;
-    int sign = 1;
 
     enum StateEnum { IN_SIGN, IN_BEFORE_FIRST_DIG, IN_BEFORE_DEC, IN_AFTER_DEC, IN_END} state = IN_SIGN;
     const numpunct<char> *facet = has_facet<numpunct<char> >(input.getloc())?
@@ -635,6 +638,8 @@ bool fromStream(StreamType &input, decimal_type &output) {
     enum ErrorCodes { ERR_WRONG_CHAR = -1, ERR_NO_DIGITS = -2, ERR_WRONG_STATE = -3, ERR_STREAM_GET_ERROR = -4 };
 
     before = after = 0;
+    sign = 1;
+
     int error = 0;
     int digitsCount = 0;
     int afterDigitCount = 0;
@@ -692,7 +697,7 @@ bool fromStream(StreamType &input, decimal_type &output) {
             if ((c >= '0') && (c <= '9')) {
                 after = 10 * after + static_cast<int>(c - '0');
                 afterDigitCount++;
-                if (afterDigitCount >= decimal_type::decimal_points)
+                if (afterDigitCount >= dec::max_decimal_points)
                    state = IN_END;
             } else {
                 state = IN_END;
@@ -708,31 +713,73 @@ bool fromStream(StreamType &input, decimal_type &output) {
         } // switch state
   } // while stream good & not end
 
+  decimalDigits = afterDigitCount;
+
   if (error >= 0)
   {
-    if (afterDigitCount > 0)
-    {
-       // convert 4 to 4000 for decimal<4>
-       int leftPow = decimal_type::decimal_points - afterDigitCount;
-       while (leftPow > 0)
-       {
-           after *= 10;
-           leftPow--;
-       }
-    }
 
     if (sign < 0) {
         before = -before;
         after = -after;
     }
 
-    output.pack(before, after);
   } else {
-    output.pack(0,0);
+    before = after = 0;
   }
 
   return (error >= 0);
 } // function
+
+}; // namespace
+
+/// Converts stream of chars to decimal
+/// Handles the following formats ('.' is selected from locale info):
+/// \code
+/// 123
+/// -123
+/// 123.0
+/// -123.0
+/// 123.
+/// .123
+/// 0.
+/// -.123
+/// \endcode
+/// Spaces and tabs on the front are ignored.
+/// Performs rounding when provided value has higher precision than in output type.
+/// \param[in] input input stream
+/// \param[out] output decimal value, 0 on error
+/// \result Returns true if conversion succeeded
+template <typename decimal_type, typename StreamType>
+bool fromStream(StreamType &input, decimal_type &output) {
+  int sign, afterDigits;
+  int64 before, after;
+  bool result = details::parse_unpacked(input, sign, before, after, afterDigits);
+  if (result) {
+    if (afterDigits <= decimal_type::decimal_points) {
+        // direct mode
+        int corrCnt = decimal_type::decimal_points - afterDigits;
+        while(corrCnt > 0) {
+          after *= 10;
+          --corrCnt;
+        }
+        output.pack(before, after);
+    } else {
+        // rounding mode
+        int corrCnt = afterDigits;
+        int64 decimalFactor = 1;
+        while(corrCnt > 0) {
+          before *= 10;
+          decimalFactor *= 10;
+          --corrCnt;
+        }
+        decimal_type temp(before + after, decimalFactor);
+        output = temp;
+    }
+  } else {
+    output = decimal_type(0);
+  }
+  return result;
+}
 
 /// Exports decimal to string
 /// Used format: {-}bbbb.aaaa where

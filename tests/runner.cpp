@@ -18,5 +18,7 @@ extern int putenv(char*);
 #define BOOST_TEST_MODULE "C++ Unit Tests for decimal"
 #include <boost/test/included/unit_test.hpp>
 
+BOOST_AUTO_TEST_SUITE ( test )
 #include "decimalTest.ipp"
 //#include "decimalTestIo.ipp"
+BOOST_AUTO_TEST_SUITE_END( )

@@ -2,9 +2,9 @@ Purpose:     Decimal data type support, for COBOL-like fixed-point
              operations on currency/money values.
 Author:      Piotr Likus
 Created:     03/01/2011
-Modified:    15/01/2016
+Modified:    16/04/2016
 Licence:     BSD
-Version:     1.8
+Version:     1.9
 
 This data type is designed to perform calculation with on-fly  roundings
 &  to  support  correct  compare  function  (floating-point  compare  is
