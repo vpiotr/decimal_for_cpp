@@ -307,7 +307,7 @@ public:
         decimal result = *this;
         //result.m_value = (result.m_value * rhs.m_value) / DecimalFactor<Prec>::value;
         result.m_value =
-             multDiv(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
+             multiplication(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
 
         return result;
     }
@@ -315,9 +315,49 @@ public:
     decimal & operator*=(const decimal &rhs) {
       //m_value = (m_value * rhs.m_value) / DecimalFactor<Prec>::value;
       m_value =
-            multDiv(m_value, rhs.m_value, DecimalFactor<Prec>::value);
+            multiplication(m_value, rhs.m_value, DecimalFactor<Prec>::value);
 
       return *this;
+    }
+    const decimal operator*(const int &rhs) const {
+        decimal result = *this;
+        result.m_value *= rhs;
+        return result;
+    }
+    decimal & operator*=(const int & rhs) {
+        m_value *= rhs;
+    }
+    const decimal operator*(const int64 &rhs) const {
+        decimal result = *this;
+        result.m_value *= rhs;
+        return result;
+    }
+    decimal & operator*=(const int64 & rhs) {
+        m_value *= rhs;
+    }
+    const decimal operator*(const uint &rhs) const {
+        decimal result = *this;
+        result.m_value *= rhs;
+        return result;
+    }
+    decimal & operator*=(const uint & rhs) {
+        m_value *= rhs;
+    }
+    const decimal operator*(const float &rhs) const {
+        decimal result = *this;
+        result.m_value *= rhs;
+        return result;
+    }
+    decimal & operator*=(const float & rhs) {
+        m_value *= rhs;
+    }
+    const decimal operator*(const double &rhs) const {
+        decimal result = *this;
+        result.m_value *= rhs;
+        return result;
+    }
+    decimal & operator*=(const double & rhs) {
+        m_value *= rhs;
     }
 
     const decimal operator/(const decimal &rhs) const {
@@ -429,6 +469,18 @@ protected:
             ++res;
         }
         return res;
+    }
+    inline static int64 multiplication(int64 value1, int64 value2, int64 divisor)
+    {
+        const int64 value1int = value1 / divisor;
+        const int64 value1dec = value1 % divisor;
+        const int64 value2int = value2 / divisor;
+        const int64 value2dec = value2 % divisor;
+
+        return value1int * value2int * divisor
+            + value1int * value2dec
+            + value1dec * value2int
+            + (value1dec * value2dec + divisor / 2) / divisor;
     }
 
     // result = (value1 * value2) / divisor
