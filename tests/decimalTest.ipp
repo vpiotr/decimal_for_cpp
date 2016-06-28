@@ -70,6 +70,7 @@ BOOST_AUTO_TEST_CASE(decimalArithmetic)
    BOOST_CHECK(balance == dec::decimal2(-45));
    BOOST_CHECK(balance == dec::decimal2(-45.0));
 
+   // check div
    balance = balance / dec::decimal2(10.0);
    BOOST_TEST_MESSAGE("balance-9: " << toString(balance));
    BOOST_CHECK(balance == dec::decimal2(-4.5));
@@ -99,6 +100,66 @@ BOOST_AUTO_TEST_CASE(decimalArithmetic)
    BOOST_CHECK(balance == dec::decimal2(4.45));
 
    BOOST_TEST_MESSAGE("balance-end: " << toString(balance));
+}
+
+BOOST_AUTO_TEST_CASE(decimalMultiplyPrec)
+{
+   // check mult prec
+   BOOST_CHECK_EQUAL(dec::decimal<4>("0.0001") * dec::decimal<4>("1.0000"), dec::decimal<4>("0.0001"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("0.0010") * dec::decimal<4>("1.1000"), dec::decimal<4>("0.0011"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("2.0100") * dec::decimal<4>("1.1000"), dec::decimal<4>("2.211"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("2.5010") * dec::decimal<4>("1.5000"), dec::decimal<4>("3.7515"));
+
+   // check mult neg 1
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-0.0001") * dec::decimal<4>("1.0000"), dec::decimal<4>("-0.0001"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-0.0010") * dec::decimal<4>("1.1000"), dec::decimal<4>("-0.0011"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-2.0100") * dec::decimal<4>("1.1000"), dec::decimal<4>("-2.211"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-2.5010") * dec::decimal<4>("1.5000"), dec::decimal<4>("-3.7515"));
+
+   // check mult neg 2
+   BOOST_CHECK_EQUAL(dec::decimal<4>("0.0001") * dec::decimal<4>("-1.0000"), dec::decimal<4>("-0.0001"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("0.0010") * dec::decimal<4>("-1.1000"), dec::decimal<4>("-0.0011"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("2.0100") * dec::decimal<4>("-1.1000"), dec::decimal<4>("-2.211"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("2.5010") * dec::decimal<4>("-1.5000"), dec::decimal<4>("-3.7515"));
+
+   // check mult both neg
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-0.0001") * dec::decimal<4>("-1.0000"), dec::decimal<4>("0.0001"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-0.0010") * dec::decimal<4>("-1.1000"), dec::decimal<4>("0.0011"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-2.0100") * dec::decimal<4>("-1.1000"), dec::decimal<4>("2.211"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-2.5010") * dec::decimal<4>("-1.5000"), dec::decimal<4>("3.7515"));
+
+   // check medium prec - near 32 bits
+   BOOST_CHECK_EQUAL(dec::decimal<9>("1.5") * dec::decimal<9>("2.1000"), dec::decimal<9>("3.15"));
+   BOOST_CHECK_EQUAL(dec::decimal<9>("1.000000005") * dec::decimal<9>("2"), dec::decimal<9>("2.000000010"));
+   BOOST_CHECK_EQUAL(dec::decimal<9>("1.80000001")  * dec::decimal<9>("2"), dec::decimal<9>("3.600000020"));
+   BOOST_CHECK_EQUAL(dec::decimal<9>("1.80000001")  * dec::decimal<9>("2"), dec::decimal<9>("3.600000020"));
+}
+
+BOOST_AUTO_TEST_CASE(decimalMultiplyInt)
+{
+   BOOST_CHECK_EQUAL(dec::decimal<4>("0.0001") * 2, dec::decimal<4>("0.0002"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("0.1001") * 3, dec::decimal<4>("0.3003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("1.1001") * 3, dec::decimal<4>("3.3003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("1.0001") * 3, dec::decimal<4>("3.0003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("1.0") * 3, dec::decimal<4>("3.0"));
+
+   BOOST_CHECK_EQUAL(dec::decimal<4>("0.0001") * -2, dec::decimal<4>("-0.0002"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("0.1001") * -3, dec::decimal<4>("-0.3003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("1.1001") * -3, dec::decimal<4>("-3.3003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("1.0001") * -3, dec::decimal<4>("-3.0003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("1.0") * -3, dec::decimal<4>("-3.0"));
+
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-0.0001") * 2, dec::decimal<4>("-0.0002"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-0.1001") * 3, dec::decimal<4>("-0.3003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-1.1001") * 3, dec::decimal<4>("-3.3003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-1.0001") * 3, dec::decimal<4>("-3.0003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-1.0") * 3, dec::decimal<4>("-3.0"));
+
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-0.0001") * -2, dec::decimal<4>("0.0002"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-0.1001") * -3, dec::decimal<4>("0.3003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-1.1001") * -3, dec::decimal<4>("3.3003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-1.0001") * -3, dec::decimal<4>("3.0003"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("-1.0") * -3, dec::decimal<4>("3.0"));
 }
 
 BOOST_AUTO_TEST_CASE(decimalRounding)
@@ -152,7 +213,7 @@ BOOST_AUTO_TEST_CASE(decimalRounding)
    BOOST_TEST_MESSAGE("longDec1: " << longDec1);
    BOOST_TEST_MESSAGE("longDec1 as string: " << s);
    BOOST_TEST_MESSAGE("longDec2: " << longDec2);
-   BOOST_REQUIRE_EQUAL(longDec1, longDec2);
+   BOOST_CHECK_EQUAL(longDec1, longDec2);
 }
 
 BOOST_AUTO_TEST_CASE(decimalHighEndVals)
@@ -205,8 +266,8 @@ BOOST_AUTO_TEST_CASE(decimalMaxUIntCtor)
   unsigned int uint_max = boost::integer_traits<unsigned int>::const_max;
   std::string uint_max_txt = toString(uint_max);
   dec::decimal<2> a(uint_max);
-  BOOST_REQUIRE_EQUAL( a, dec::decimal<2>(uint_max_txt) );
-  BOOST_REQUIRE_EQUAL( a.getAsInteger(), uint_max);
+  BOOST_CHECK_EQUAL( a, dec::decimal<2>(uint_max_txt) );
+  BOOST_CHECK_EQUAL( a.getAsInteger(), uint_max);
 }
 
 BOOST_AUTO_TEST_CASE(decimalAsInteger)
@@ -215,17 +276,17 @@ BOOST_AUTO_TEST_CASE(decimalAsInteger)
    dec::decimal<6> a;
    a = dec::decimal<6>("2305843009213.693952");
    dec::DEC_INT64 expectedValue = 2305843009214;
-   BOOST_REQUIRE_EQUAL( a.getAsInteger(), expectedValue);
+   BOOST_CHECK_EQUAL( a.getAsInteger(), expectedValue);
 
    // int64 value (>0)
    expectedValue = 23058430092136939;
    dec::decimal<1> b = dec::decimal<1>(toString(expectedValue));
-   BOOST_REQUIRE_EQUAL( b.getAsInteger(), expectedValue);
+   BOOST_CHECK_EQUAL( b.getAsInteger(), expectedValue);
 
    // int64 value (<0)
    expectedValue = -23058430092136939;
    dec::decimal<1> c = dec::decimal<1>(toString(expectedValue));
-   BOOST_REQUIRE_EQUAL( c.getAsInteger(), expectedValue);
+   BOOST_CHECK_EQUAL( c.getAsInteger(), expectedValue);
 }
 
 // test with values internally > 2^32

@@ -4,8 +4,8 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 16/04/2016
-// Version:     1.9
+// Last change: 28/06/2016
+// Version:     1.10
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -64,6 +64,10 @@
 
 // --> define DEC_MAX_INTxx, DEC_MIN_INTxx if required
 
+#ifndef DEC_NAMESPACE
+#define DEC_NAMESPACE dec
+#endif // DEC_NAMESPACE
+
 #ifndef DEC_EXTERNAL_LIMITS
 #ifndef DEC_NO_CPP11
 //#define DEC_MAX_INT32 ((std::numeric_limits<int32_t>::max)())
@@ -78,7 +82,7 @@
 
 // <--
 
-namespace dec
+namespace DEC_NAMESPACE
 {
 
 // ----------------------------------------------------------------------------
@@ -196,7 +200,7 @@ public:
     }
 };
 
-enum { max_decimal_points = 18 };
+enum { max_decimal_points = 18, mult_prec_max_prec = 9 };
 
 template <int Prec, class RoundPolicy = def_round_policy>
 class decimal {
@@ -268,7 +272,7 @@ public:
     }
 
     bool operator!=(const decimal &rhs) const {
-      return !(*this == rhs);
+        return !(*this == rhs);
     }
 
     const decimal operator+(const decimal &rhs) const {
@@ -299,25 +303,59 @@ public:
     }
 
     decimal & operator-=(const decimal &rhs) {
-      m_value -= rhs.m_value;
-      return *this;
+        m_value -= rhs.m_value;
+        return *this;
+    }
+
+    const decimal operator*(int rhs) const {
+        decimal result = *this;
+        result.m_value *= rhs;
+        return result;
+    }
+
+    const decimal operator*(int64 rhs) const {
+        decimal result = *this;
+        result.m_value *= rhs;
+        return result;
     }
 
     const decimal operator*(const decimal &rhs) const {
         decimal result = *this;
         //result.m_value = (result.m_value * rhs.m_value) / DecimalFactor<Prec>::value;
-        result.m_value =
-             multDiv(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
-
+        if (Prec <= mult_prec_max_prec) {
+            result.m_value =
+                multPrec(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        }
+        else {
+            result.m_value =
+                multDiv(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        }
         return result;
     }
 
-    decimal & operator*=(const decimal &rhs) {
-      //m_value = (m_value * rhs.m_value) / DecimalFactor<Prec>::value;
-      m_value =
-            multDiv(m_value, rhs.m_value, DecimalFactor<Prec>::value);
+    decimal & operator*=(int rhs) {
+        m_value *= rhs;
+        return this;
+    }
 
-      return *this;
+    decimal & operator*=(int64 rhs) {
+        m_value *= rhs;
+        return this;
+    }
+
+    decimal & operator*=(const decimal &rhs) {
+        //m_value = (m_value * rhs.m_value) / DecimalFactor<Prec>::value;
+
+        if (Prec <= mult_prec_max_prec) {
+            m_value =
+                multPrec(m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        }
+        else {
+            m_value =
+                multDiv(m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        }
+
+        return *this;
     }
 
     const decimal operator/(const decimal &rhs) const {
@@ -478,6 +516,31 @@ protected:
                    /
                    static_cast<cross_float>(divisor)
                );
+    }
+
+    inline static int64 multPrec(int64 value1, int64 value2, int64 precValue)
+    {
+        const int64 value1abs = abs(value1);
+        const int64 value2abs = abs(value2);
+        const bool negative = (value1 < 0) != (value2 < 0);
+        const int64 value1int = value1abs / precValue;
+        const int64 value1dec = value1abs % precValue;
+        const int64 value2int = value2abs / precValue;
+        const int64 value2dec = value2abs % precValue;
+
+        int64 resDecPart;
+        if (!RoundPolicy::div_rounded(resDecPart, value1dec * value2dec, precValue))
+           resDecPart = 0;
+
+        int64 result = value1int * value2int * precValue
+            + value1int * value2dec
+            + value1dec * value2int
+            + resDecPart;
+
+        if (negative)
+          result = -result;
+
+        return result;
     }
 
     void init(const decimal &src) { m_value = src.m_value; }
