@@ -306,16 +306,28 @@ public:
     const decimal operator*(const decimal &rhs) const {
         decimal result = *this;
         //result.m_value = (result.m_value * rhs.m_value) / DecimalFactor<Prec>::value;
-        result.m_value =
-             multiplication(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        if (Prec < 10) {
+            result.m_value =
+                multiplication(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        }
+        else {
+            result.m_value =
+                multDiv(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        }
 
         return result;
     }
 
     decimal & operator*=(const decimal &rhs) {
       //m_value = (m_value * rhs.m_value) / DecimalFactor<Prec>::value;
-      m_value =
-            multiplication(m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        if (Prec < 10) {
+            m_value =
+                multiplication(m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        }
+        else {
+            m_value =
+                multDiv(m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        }
 
       return *this;
     }
@@ -341,22 +353,6 @@ public:
         return result;
     }
     decimal & operator*=(const uint & rhs) {
-        m_value *= rhs;
-    }
-    const decimal operator*(const float &rhs) const {
-        decimal result = *this;
-        result.m_value *= rhs;
-        return result;
-    }
-    decimal & operator*=(const float & rhs) {
-        m_value *= rhs;
-    }
-    const decimal operator*(const double &rhs) const {
-        decimal result = *this;
-        result.m_value *= rhs;
-        return result;
-    }
-    decimal & operator*=(const double & rhs) {
         m_value *= rhs;
     }
 

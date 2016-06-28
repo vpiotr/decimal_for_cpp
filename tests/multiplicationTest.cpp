@@ -3,8 +3,6 @@
 #include <vector>
 #include <chrono>
 
-//typedef std::chrono::high_resolution_clock::time_point TimeVar;
-
 #define duration(a) std::chrono::duration_cast<std::chrono::nanoseconds>(a).count()
 #define timeNow() std::chrono::high_resolution_clock::now()
 
@@ -69,7 +67,13 @@ int main()
 		myDecimals.push_back(dec::decimal_cast<4>(val) * 123);
 	}
 	for (auto val : myDoubles) {
-		myDecimals.push_back(dec::decimal_cast<4>(val) * 574.567);
+		myDecimals.push_back(dec::decimal_cast<4>(val) * dec::decimal_cast<4>(574.567));
+	}
+	for (auto val : myDoubles) {
+		myDecimals.push_back(dec::decimal_cast<4>(val) * dec::decimal_cast<4>(934551.235));
+	}
+	for (auto val : myDoubles) {
+		myDecimals.push_back(dec::decimal_cast<4>(val) * dec::decimal_cast<4>(-3457574.567));
 	}
 
 	//check how long it takes to multiply the numbers in the vector
@@ -79,12 +83,19 @@ int main()
 		val *= dec::decimal_cast<4>(33556.3452);
 	}
 
-	std::cout << duration(timeNow() - t1) << "\n";
+	std::cout << "Running " << myDecimals.size() << " multiplications takes " << duration(timeNow() - t1) << " nanoseconds\n";
 
 	// test accuracy of big number calculation
 	dec::decimal<4> bignumber = dec::decimal_cast<4>(310000.6789);
 	auto anotherbignumber = dec::decimal_cast<4>(310000.9876);
-	std::cout << "Big number: " << bignumber << " * " << anotherbignumber << " = " << bignumber * anotherbignumber << std::endl;
+	std::cout << "Big number:          " << bignumber << " * " << anotherbignumber << " = " << bignumber * anotherbignumber << std::endl;
 	// should be 96100516616.6705
 
+	// test accuracy of multiplying with int
+	auto num1 = dec::decimal_cast<4>(534632.4542);
+	std::cout << "Multiply with int:   " << num1 << " *  34326      = " << num1 * 34326 << std::endl;
+
+	// test accuracy of multiplying with float
+	num1 = dec::decimal_cast<4>(534632.4542);
+	std::cout << "Multiply with float: " << num1 << " *  34326.3521 = " << num1 * dec::decimal_cast<4>(34326.3521) << std::endl;
 }
