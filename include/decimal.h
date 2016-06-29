@@ -358,6 +358,22 @@ public:
         return *this;
     }
 
+    const decimal operator/(int rhs) const {
+        decimal result = *this;
+        if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs))
+           result.m_value = 0;
+
+        return result;
+    }
+
+    const decimal operator/(int64 rhs) const {
+        decimal result = *this;
+        if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs))
+           result.m_value = 0;
+
+        return result;
+    }
+
     const decimal operator/(const decimal &rhs) const {
         decimal result = *this;
         //result.m_value = (result.m_value * DecimalFactor<Prec>::value) / rhs.m_value;
@@ -365,6 +381,16 @@ public:
             multDiv(result.m_value, DecimalFactor<Prec>::value, rhs.m_value);
 
         return result;
+    }
+
+    decimal & operator/=(int rhs) {
+        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs))
+        return this;
+    }
+
+    decimal & operator/=(int64 rhs) {
+        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs))
+        return this;
     }
 
     decimal & operator/=(const decimal &rhs) {
