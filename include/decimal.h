@@ -178,11 +178,11 @@ class def_round_policy {
 public:
     template<class T>
     static int64 round(T value) {
-        return dec::round(value);
+        return DEC_NAMESPACE::round(value);
     }
 
     static bool div_rounded(int64 &output, int64 a, int64 b) {
-        return dec::div_rounded(output, a, b);
+        return DEC_NAMESPACE::div_rounded(output, a, b);
     }
 };
 
@@ -798,7 +798,7 @@ bool parse_unpacked(StreamType &input, int &sign, int64 &before, int64 &after, i
             if ((c >= '0') && (c <= '9')) {
                 after = 10 * after + static_cast<int>(c - '0');
                 afterDigitCount++;
-                if (afterDigitCount >= dec::max_decimal_points)
+                if (afterDigitCount >= DEC_NAMESPACE::max_decimal_points)
                    state = IN_END;
             } else {
                 state = IN_END;
