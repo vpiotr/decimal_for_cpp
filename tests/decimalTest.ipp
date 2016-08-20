@@ -133,6 +133,9 @@ BOOST_AUTO_TEST_CASE(decimalMultiplyPrec)
    BOOST_CHECK_EQUAL(dec::decimal<9>("1.000000005") * dec::decimal<9>("2"), dec::decimal<9>("2.000000010"));
    BOOST_CHECK_EQUAL(dec::decimal<9>("1.80000001")  * dec::decimal<9>("2"), dec::decimal<9>("3.600000020"));
    BOOST_CHECK_EQUAL(dec::decimal<9>("1.80000001")  * dec::decimal<9>("2"), dec::decimal<9>("3.600000020"));
+
+   // check as dec 6
+   BOOST_CHECK_EQUAL(dec::decimal<6>("35000.000005") * dec::decimal<6>("54123.654133"), dec::decimal<6>("1894327894.925618"));
 }
 
 BOOST_AUTO_TEST_CASE(decimalMultiplyInt)
@@ -160,6 +163,12 @@ BOOST_AUTO_TEST_CASE(decimalMultiplyInt)
    BOOST_CHECK_EQUAL(dec::decimal<4>("-1.1001") * -3, dec::decimal<4>("3.3003"));
    BOOST_CHECK_EQUAL(dec::decimal<4>("-1.0001") * -3, dec::decimal<4>("3.0003"));
    BOOST_CHECK_EQUAL(dec::decimal<4>("-1.0") * -3, dec::decimal<4>("3.0"));
+}
+
+BOOST_AUTO_TEST_CASE(decimalDivInt)
+{
+   BOOST_CHECK_EQUAL(dec::decimal<4>("1.0001") / 2,  dec::decimal<4>("0.5001"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>("2.0010") / 2L, dec::decimal<4>("1.0005"));
 }
 
 BOOST_AUTO_TEST_CASE(decimalRounding)

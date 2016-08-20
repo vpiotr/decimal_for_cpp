@@ -178,11 +178,11 @@ class def_round_policy {
 public:
     template<class T>
     static int64 round(T value) {
-        return dec::round(value);
+        return DEC_NAMESPACE::round(value);
     }
 
     static bool div_rounded(int64 &output, int64 a, int64 b) {
-        return dec::div_rounded(output, a, b);
+        return DEC_NAMESPACE::div_rounded(output, a, b);
     }
 };
 
@@ -360,6 +360,28 @@ public:
 
     const decimal operator/(int rhs) const {
         decimal result = *this;
+
+        if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs)) {
+            result.m_value =
+                multDiv(result.m_value, 1, rhs);
+        }
+
+        return result;
+    }
+
+    const decimal operator/(int64 rhs) const {
+        decimal result = *this;
+
+        if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs)) {
+            result.m_value =
+                multDiv(result.m_value, 1, rhs);
+        }
+
+        return result;
+    }
+
+    const decimal operator/(int rhs) const {
+        decimal result = *this;
         if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs))
            result.m_value = 0;
 
@@ -381,6 +403,22 @@ public:
             multDiv(result.m_value, DecimalFactor<Prec>::value, rhs.m_value);
 
         return result;
+    }
+
+    decimal & operator/=(int rhs) {
+        if (!RoundPolicy::div_rounded(this.m_value, this->m_value, rhs)) {
+            this.m_value =
+                multDiv(this.m_value, 1, rhs);
+        }
+        return this;
+    }
+
+    decimal & operator/=(int64 rhs) {
+        if (!RoundPolicy::div_rounded(this.m_value, this->m_value, rhs)) {
+            this.m_value =
+                multDiv(this.m_value, 1, rhs);
+        }
+        return this;
     }
 
     decimal & operator/=(int rhs) {
@@ -786,7 +824,7 @@ bool parse_unpacked(StreamType &input, int &sign, int64 &before, int64 &after, i
             if ((c >= '0') && (c <= '9')) {
                 after = 10 * after + static_cast<int>(c - '0');
                 afterDigitCount++;
-                if (afterDigitCount >= dec::max_decimal_points)
+                if (afterDigitCount >= DEC_NAMESPACE::max_decimal_points)
                    state = IN_END;
             } else {
                 state = IN_END;
