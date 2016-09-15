@@ -118,6 +118,25 @@ typedef long double xdouble;
 // ----------------------------------------------------------------------------
 // Constants
 // ----------------------------------------------------------------------------
+const int64 decimalFactorTable[] =     {1,
+                                        10,
+                                        100,
+                                        1000,
+                                        10000,
+                                        100000,
+                                        1000000,
+                                        10000000,
+                                        100000000,
+                                        1000000000,
+                                        10000000000,
+                                        100000000000,
+                                        1000000000000,
+                                        10000000000000,
+                                        100000000000000,
+                                        1000000000000000,
+                                        10000000000000000,
+                                        100000000000000000,
+                                        1000000000000000000};
 
 // ----------------------------------------------------------------------------
 // Class definitions
@@ -222,6 +241,7 @@ public:
     explicit decimal(xdouble value) { init(value); }
     explicit decimal(double value) { init(value); }
     explicit decimal(float value) { init(value); }
+    explicit decimal(int mantissa, int exponent) { init(mantissa, exponent); }
     explicit decimal(int64 value, int64 precFactor) { initWithPrec(value, precFactor); }
     explicit decimal(const std::string &value) { fromString(value, *this); }
 
@@ -428,6 +448,29 @@ public:
        xdouble nval = value * getPrecFactorXDouble();
        m_value = RoundPolicy::round(nval);
     }
+    
+    void setAsMantExp(int mantissa, int exponent) {
+        m_value = mantissa;
+        int factor = exponent+Prec;
+        
+        if (factor < 0)
+            m_value /= decimalFactorTable[-factor];
+        else
+            m_value *= decimalFactorTable[factor];
+    }
+    
+    void getAsMantExp(int &mantissa, int &exponent) const {
+        int64 value = m_value;
+        exponent = -Prec;
+
+        // normalize
+        while (value%10 == 0) {
+            value /= 10;
+            exponent++;
+        }
+
+        mantissa = value;
+    }
 
     // returns integer value = real_value * (10 ^ precision)
     // use to load/store decimal value in external memory
@@ -607,6 +650,17 @@ protected:
              static_cast<double>(value)
          );
     }
+    
+    void init(int mantissa, int exponent) {
+        m_value = mantissa;
+        int factor = exponent+Prec;
+        
+        if (factor < 0)
+            m_value /= decimalFactorTable[-factor];
+        else
+            m_value *= decimalFactorTable[factor];
+    }
+    
     void initWithPrec(int64 value, int64 precFactor) {
         int64 ownFactor = DecimalFactor<Prec>::value;
 
