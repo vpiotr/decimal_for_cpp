@@ -180,10 +180,10 @@ BOOST_AUTO_TEST_CASE(decimalWithExponent)
    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, -1),  dec::decimal<4>("1.1"));
 
    // build negative values
-   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, 2),  dec::decimal<4>("1100"));
-   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, -2),  dec::decimal<4>("0.11"));
-   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, 1),  dec::decimal<4>("110"));
-   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, -1),  dec::decimal<4>("1.1"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, 2),  dec::decimal<4>("-1100"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, -2),  dec::decimal<4>("-0.11"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, 1),  dec::decimal<4>("-110"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, -1),  dec::decimal<4>("-1.1"));
 
    // build zero
    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(0, -1),  dec::decimal<4>("0"));
