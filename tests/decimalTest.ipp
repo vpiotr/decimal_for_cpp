@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(decimalArithmetic)
 
    BOOST_CHECK(sizeof(dec::decimal2::raw_data_t) > 0);
 
-   balance /= dec::decimal2(10.0);
+   balance /= 10;
    BOOST_CHECK(balance == dec::decimal2(-1.35));
 
    balance -= dec::decimal2(0.1);

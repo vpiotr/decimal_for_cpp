@@ -335,12 +335,12 @@ public:
 
     decimal & operator*=(int rhs) {
         m_value *= rhs;
-        return this;
+        return *this;
     }
 
     decimal & operator*=(int64 rhs) {
         m_value *= rhs;
-        return this;
+        return *this;
     }
 
     decimal & operator*=(const decimal &rhs) {
@@ -390,19 +390,19 @@ public:
     }
 
     decimal & operator/=(int rhs) {
-        if (!RoundPolicy::div_rounded(this.m_value, this->m_value, rhs)) {
-            this.m_value =
-                multDiv(this.m_value, 1, rhs);
+        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
+            this->m_value =
+                multDiv(this->m_value, 1, rhs);
         }
-        return this;
+        return *this;
     }
 
     decimal & operator/=(int64 rhs) {
-        if (!RoundPolicy::div_rounded(this.m_value, this->m_value, rhs)) {
-            this.m_value =
-                multDiv(this.m_value, 1, rhs);
+        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
+            this->m_value =
+                multDiv(this->m_value, 1, rhs);
         }
-        return this;
+        return *this;
     }
 
     decimal & operator/=(const decimal &rhs) {
