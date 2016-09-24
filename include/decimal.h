@@ -200,7 +200,7 @@ public:
     }
 };
 
-enum { max_decimal_points = 18, mult_prec_max_prec = 9 };
+enum { max_decimal_points = 18 };
 
 template <int Prec, class RoundPolicy = def_round_policy>
 class decimal {
@@ -321,15 +321,7 @@ public:
 
     const decimal operator*(const decimal &rhs) const {
         decimal result = *this;
-        //result.m_value = (result.m_value * rhs.m_value) / DecimalFactor<Prec>::value;
-        if (Prec <= mult_prec_max_prec) {
-            result.m_value =
-                multPrec(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
-        }
-        else {
-            result.m_value =
-                multDiv(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
-        }
+        result.m_value = multDiv(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
         return result;
     }
 
@@ -344,17 +336,7 @@ public:
     }
 
     decimal & operator*=(const decimal &rhs) {
-        //m_value = (m_value * rhs.m_value) / DecimalFactor<Prec>::value;
-
-        if (Prec <= mult_prec_max_prec) {
-            m_value =
-                multPrec(m_value, rhs.m_value, DecimalFactor<Prec>::value);
-        }
-        else {
-            m_value =
-                multDiv(m_value, rhs.m_value, DecimalFactor<Prec>::value);
-        }
-
+        m_value = (m_value * rhs.m_value) / DecimalFactor<Prec>::value;
         return *this;
     }
 
@@ -376,22 +358,6 @@ public:
             result.m_value =
                 multDiv(result.m_value, 1, rhs);
         }
-
-        return result;
-    }
-
-    const decimal operator/(int rhs) const {
-        decimal result = *this;
-        if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs))
-           result.m_value = 0;
-
-        return result;
-    }
-
-    const decimal operator/(int64 rhs) const {
-        decimal result = *this;
-        if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs))
-           result.m_value = 0;
 
         return result;
     }
@@ -419,16 +385,6 @@ public:
                 multDiv(this->m_value, 1, rhs);
         }
         return *this;
-    }
-
-    decimal & operator/=(int rhs) {
-        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs))
-        return this;
-    }
-
-    decimal & operator/=(int64 rhs) {
-        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs))
-        return this;
     }
 
     decimal & operator/=(const decimal &rhs) {
@@ -611,77 +567,80 @@ protected:
     }
 
     // result = (value1 * value2) / divisor
-    inline static int64 multDiv(int64 value1, int64 value2, int64 divisor)
+    inline static int64 multDiv(const int64 value1, const int64 value2, int64 divisor)
     {
-      const int DEC_INT64_BITCNT_NO_SIGN = 63;
+		const int64 value1abs = abs(value1);
+		const int64 value2abs = abs(value2);
+		const int64 divisorabs = abs(divisor);
+		const bool negative = ((value1 < 0) != (value2 < 0)) != (divisor < 0);
 
-      // minimalize value1 & divisor
-      if ((value1 != 0) && (divisor != 0))
-      {
-          int64 c = gcd(value1, divisor);
-          if (c != 1) {
-              value1 /= c;
-              divisor /= c;
-          }
-      }
+		// we don't check for division by zero, the caller should - the next line will throw.
+		const int64 value1int = value1abs / divisor;
+		int64 value1dec = value1abs % divisor;
+		const int64 value2int = value2abs / divisor;
+		int64 value2dec = value2abs % divisor;
 
-      // minimalize value2 & divisor
-      if ((value2 != 0) && (divisor != 0))
-      {
-          int64 c = gcd(value2, divisor);
-          if (c != 1) {
-              value2 /= c;
-              divisor /= c;
-          }
-      }
+		int64 result = value1abs * value2int
+			+ value1int * value2dec;
 
-      int bitCnt1 = bitcnt(abs(value1));
-      int bitCnt2 = bitcnt(abs(value2));
+		if (negative) {
+			result = -result;
+			value1dec = -value1dec;
+		}
 
-      if (bitCnt1 + bitCnt2 < DEC_INT64_BITCNT_NO_SIGN)
-      {
-          // no-overflow version
-          int64 midRes = value1 * value2;
+		if (value1dec == 0 || value2dec == 0) {
+			return result;
+		}
 
-          int64 result;
-          if (RoundPolicy::div_rounded(result, midRes, divisor))
-              return result;
-      }
+		int64 resDecPart = value1dec * value2dec;
+		if (resDecPart / value1dec == value2dec) { // no overflow
+			if (!RoundPolicy::div_rounded(resDecPart, resDecPart, divisor))
+				resDecPart = 0;
+			result += resDecPart;
+			return result;
+		}
 
-      // overflow can occur - use less precise version
-      return
-          RoundPolicy::round(
-                   static_cast<cross_float>(value1)
+        // minimalize value1 & divisor
+        {     
+		    int64 c = gcd(value1dec, divisor);
+            if (c != 1) {
+                value1dec /= c;
+                divisor /= c;
+            }
+      
+            // minimalize value2 & divisor
+            c = gcd(value2dec, divisor);
+            if (c != 1) {
+                value2dec /= c;
+                divisor /= c;
+            }
+        }
+
+        int bitCnt1 = bitcnt(abs(value1dec));
+        int bitCnt2 = bitcnt(abs(value2dec));
+
+	    const int DEC_INT64_BITCNT_NO_SIGN = 63;
+	    if (bitCnt1 + bitCnt2 < DEC_INT64_BITCNT_NO_SIGN)
+        {
+            // no-overflow version
+            int64 midRes = value1dec * value2dec;
+
+		    if (RoundPolicy::div_rounded(midRes, midRes, divisor)) {
+			    result += midRes;
+			    return result;
+		    }
+        }
+
+        // overflow can occur - use less precise version
+        result +=
+            RoundPolicy::round(
+                   static_cast<cross_float>(value1dec)
                    *
-                   static_cast<cross_float>(value2)
+                   static_cast<cross_float>(value2dec)
                    /
                    static_cast<cross_float>(divisor)
-               );
-    }
-
-    inline static int64 multPrec(int64 value1, int64 value2, int64 precValue)
-    {
-        const int64 value1abs = abs(value1);
-        const int64 value2abs = abs(value2);
-        const bool negative = (value1 < 0) != (value2 < 0);
-        const int64 value1int = value1abs / precValue;
-        const int64 value1dec = value1abs % precValue;
-        const int64 value2int = value2abs / precValue;
-        const int64 value2dec = value2abs % precValue;
-
-        int64 resDecPart;
-        if (!RoundPolicy::div_rounded(resDecPart, value1dec * value2dec, precValue))
-           resDecPart = 0;
-
-        int64 result = value1int * value2int * precValue
-            + value1int * value2dec
-            + value1dec * value2int
-            + resDecPart;
-
-        if (negative)
-          result = -result;
-
-        return result;
+            );
+	    return result;
     }
 
     void init(const decimal &src) { m_value = src.m_value; }
