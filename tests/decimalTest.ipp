@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(decimalArithmetic)
 
    BOOST_CHECK(sizeof(dec::decimal2::raw_data_t) > 0);
 
-   balance /= dec::decimal2(10.0);
+   balance /= 10;
    BOOST_CHECK(balance == dec::decimal2(-1.35));
 
    balance -= dec::decimal2(0.1);
@@ -169,6 +169,46 @@ BOOST_AUTO_TEST_CASE(decimalDivInt)
 {
    BOOST_CHECK_EQUAL(dec::decimal<4>("1.0001") / 2,  dec::decimal<4>("0.5001"));
    BOOST_CHECK_EQUAL(dec::decimal<4>("2.0010") / 2L, dec::decimal<4>("1.0005"));
+}
+
+BOOST_AUTO_TEST_CASE(decimalWithExponent)
+{
+   // build positive values
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, 2),  dec::decimal<4>("1100"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, -2),  dec::decimal<4>("0.11"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, 1),  dec::decimal<4>("110"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, -1),  dec::decimal<4>("1.1"));
+
+   // build negative values
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, 2),  dec::decimal<4>("-1100"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, -2),  dec::decimal<4>("-0.11"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, 1),  dec::decimal<4>("-110"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, -1),  dec::decimal<4>("-1.1"));
+
+   // build zero
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(0, -1),  dec::decimal<4>("0"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(0, 2),  dec::decimal<4>("0"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(0, 0),  dec::decimal<4>("0"));
+
+   // add, get, set
+   dec::decimal<4> temp;
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(temp, 111213, -3),  dec::decimal<4>("111.213"));
+   dec::decimal<4> a;
+   a.setWithExponent(30, -2);
+   temp += a;
+   BOOST_CHECK_EQUAL(temp,  dec::decimal<4>("111.5130"));
+
+   dec::DEC_INT64 m;
+   int e;
+   temp.getWithExponent(m, e);
+   BOOST_CHECK_EQUAL(m, 111513);
+   BOOST_CHECK_EQUAL(e, -3);
+
+   // rounding
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(temp, 111213, -5),  dec::decimal<4>("1.1121"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(temp, 111215, -5),  dec::decimal<4>("1.1122"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(temp, -111213, -5),  dec::decimal<4>("-1.1121"));
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(temp, -111215, -5),  dec::decimal<4>("-1.1122"));
 }
 
 BOOST_AUTO_TEST_CASE(decimalRounding)

@@ -4,8 +4,8 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 28/06/2016
-// Version:     1.10
+// Last change: 19/09/2016
+// Version:     1.11
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -335,12 +335,12 @@ public:
 
     decimal & operator*=(int rhs) {
         m_value *= rhs;
-        return this;
+        return *this;
     }
 
     decimal & operator*=(int64 rhs) {
         m_value *= rhs;
-        return this;
+        return *this;
     }
 
     decimal & operator*=(const decimal &rhs) {
@@ -406,19 +406,19 @@ public:
     }
 
     decimal & operator/=(int rhs) {
-        if (!RoundPolicy::div_rounded(this.m_value, this->m_value, rhs)) {
-            this.m_value =
-                multDiv(this.m_value, 1, rhs);
+        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
+            this->m_value =
+                multDiv(this->m_value, 1, rhs);
         }
-        return this;
+        return *this;
     }
 
     decimal & operator/=(int64 rhs) {
-        if (!RoundPolicy::div_rounded(this.m_value, this->m_value, rhs)) {
-            this.m_value =
-                multDiv(this.m_value, 1, rhs);
+        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
+            this->m_value =
+                multDiv(this->m_value, 1, rhs);
         }
-        return this;
+        return *this;
     }
 
     decimal & operator/=(int rhs) {
@@ -474,6 +474,11 @@ public:
         return result;
     }
 
+    /// overwrites internal value with integer
+    void setAsInteger(int64 value) {
+        m_value = DecimalFactor<Prec>::value * value;
+    }
+
     /// Returns two parts: before and after decimal point
     /// For negative values both numbers are negative or zero.
     void unpack(int64 &beforeValue, int64 &afterValue) const {
@@ -507,9 +512,81 @@ public:
       *this = result;
       return *this;
     }
+
+    static decimal buildWithExponent(int64 mantissa, int exponent) {
+       decimal result;
+       result.setWithExponent(mantissa, exponent);
+       return result;
+    }
+
+    static decimal &buildWithExponent(decimal &output, int64 mantissa, int exponent) {
+       output.setWithExponent(mantissa, exponent);
+       return output;
+    }
+
+    void setWithExponent(int64 mantissa, int exponent) {
+
+        int exponentForPack = exponent+Prec;
+
+        if (exponentForPack < 0) {
+            int64 newValue;
+
+            if (!RoundPolicy::div_rounded(newValue, mantissa, pow10(-exponentForPack))) {
+               newValue = 0;
+            }
+
+            m_value = newValue;
+        } else {
+            m_value = mantissa * pow10(exponentForPack);
+        }
+    }
+
+    void getWithExponent(int64 &mantissa, int &exponent) const {
+        int64 value = m_value;
+        int exp = -Prec;
+
+        // normalize
+        while (value%10 == 0) {
+            value /= 10;
+            exp++;
+        }
+
+        mantissa = value;
+        exponent = exp;
+    }
+
 protected:
     inline xdouble getPrecFactorXDouble() const { return static_cast<xdouble>(DecimalFactor<Prec>::value); }
     inline double getPrecFactorDouble() const { return static_cast<double>(DecimalFactor<Prec>::value); }
+
+    int64 pow10(int n) {
+        static const int64 decimalFactorTable[] =
+           {1,
+            10,
+            100,
+            1000,
+            10000,
+            100000,
+            1000000,
+            10000000,
+            100000000,
+            1000000000,
+            10000000000,
+            100000000000,
+            1000000000000,
+            10000000000000,
+            100000000000000,
+            1000000000000000,
+            10000000000000000,
+            100000000000000000,
+            1000000000000000000};
+
+        if (n >= 0 && n <= max_decimal_points) {
+          return decimalFactorTable[n];
+        } else {
+          return 0;
+        }
+    }
 
     // calculate greatest common divisor
     static int64 gcd(int64 a, int64 b)
@@ -963,7 +1040,7 @@ template <class charT, class traits, int prec>
 /// bbbb is stream of digits before decimal point
 /// aaaa is stream of digits after decimal point
 template <typename T>
-T fromString (const std::string &str) {
+T fromString(const std::string &str) {
     std::istringstream is(str);
     T t;
     is >> t;
