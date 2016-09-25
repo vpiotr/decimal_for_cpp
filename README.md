@@ -5,11 +5,11 @@ Author: Piotr Likus
 
 Created: 03/01/2011
 
-Modified: 19/09/2016
+Modified: 25/09/2016
 
 Licence: BSD
 
-Version: 1.11
+Version: 1.12
 
 This data type is designed to perform calculation with on-fly  roundings
 &  to  support  correct  compare  function  (floating-point  compare  is
@@ -30,32 +30,47 @@ Example usage:
 #include "decimal.h"
 
 using namespace dec;
+using namespace std;
 
 // the following declares currency variable with 2 decimal points
 // initialized with integer value (can be also floating-point)
 decimal<2> value(143125);
 
-// to use non-decimal constants you need to convert them to decimal
-value = value / decimal_cast<2>(333.0);
+// displays: Value #1 is: 143125.00
+cout << "Value #1 is: " << value << endl;
 
-// output values
-cout << "Result is: " << value << endl;
-// this should display something like "429.80"
+// declare precise value with digits after decimal point
+decimal<2> b("0.11");
+
+// perform calculations as with any other numeric type
+value += b;
+
+// displays: Value #2 is: 143125.11
+cout << "Value #2 is: " << value << endl;
+
+// automatic rounding performed here
+value /= 1000;
+
+// displays: Value #3 is: 143.13
+cout << "Value #3 is: " << value << endl;
+
+// integer multiplication and division can be used directly in expression
+// displays: Value: 143.13 * 2 is: 286.26
+cout << "Value: " << value << " * 2 is: " << (value * 2) << endl;
+
+// to use non-integer constants in expressions you need to use decimal_cast
+value = value * decimal_cast<2>("3.33") / decimal_cast<2>(333.0);
+
+// displays: Value #4 is: 1.43
+cout << "Value #4 is: " << value << endl;
 
 // to mix decimals with different precision use decimal_cast
+// it will round result automatically
 decimal<6> exchangeRate(12.1234);
 value = decimal_cast<2>(decimal_cast<6>(value) * exchangeRate);
 
-// to fast multiply decimal by int value you can perform:
-decimal<6> exchangeRate2("12.123124");
-cout << "Rate: " << exchangeRate2 << " multiplied by 2 is: " << (exchangeRate2 * 2) << endl;
-// this should display "24.246248"
-
-cout << "Result 2 is: " << value << endl;
-// this should display something like "5210.64"
-
-cout << "Result 2<6> is: " << decimal_cast<6>(value) << endl;
-// this should display something like "5210.640000"
+// displays: Value #5 is: 17.34
+cout << "Value #5 is: " << value << endl;
 ```
 
 # Other information
