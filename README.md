@@ -19,6 +19,7 @@ rates.
 To store decimal in file you can use "unbiased" functions or use stream i/o.
 
 Example usage:
+``` c++
   #include "decimal.h"
 
   using namespace dec;
@@ -48,6 +49,7 @@ Example usage:
 
   cout << "Result 2<6> is: " << decimal_cast<6>(value) << endl;
   // this should display something like "5210.640000"
+```
 
 For more examples please see \test directory.
 
