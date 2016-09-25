@@ -336,7 +336,7 @@ public:
     }
 
     decimal & operator*=(const decimal &rhs) {
-        m_value = (m_value * rhs.m_value) / DecimalFactor<Prec>::value;
+        m_value = multDiv(m_value, rhs.m_value, DecimalFactor<Prec>::value);
         return *this;
     }
 
