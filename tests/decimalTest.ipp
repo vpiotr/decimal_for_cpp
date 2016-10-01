@@ -27,6 +27,64 @@ T fromString (const std::string &str) {
 }
 */
 
+BOOST_AUTO_TEST_CASE(decimalAbout) {
+   using namespace dec;
+   using namespace std;
+
+   // the following declares currency variable with 2 decimal points
+   // initialized with integer value (can be also floating-point)
+   decimal<2> value(143125);
+
+   // displays: Value #1 is: 143125.00
+   cout << "Value #1 is: " << value << endl;
+
+   // declare precise value with digits after decimal point
+   decimal<2> b("0.11");
+
+   // perform calculations as with any other numeric type
+   value += b;
+
+   // displays: Value #2 is: 143125.11
+   cout << "Value #2 is: " << value << endl;
+
+   // automatic rounding performed here
+   value /= 1000;
+
+   // displays: Value #3 is: 143.13
+   cout << "Value #3 is: " << value << endl;
+
+   // integer multiplication and division can be used directly in expression
+   // displays: Value: 143.13 * 2 is: 286.26
+   cout << "Value: " << value << " * 2 is: " << (value * 2) << endl;
+
+   // to use non-integer constants in expressions you need to use decimal_cast
+   value = value * decimal_cast<2>("3.33") / decimal_cast<2>(333.0);
+
+   // displays: Value #4 is: 1.43
+   cout << "Value #4 is: " << value << endl;
+
+   // to mix decimals with different precision use decimal_cast
+   // it will round result automatically
+   decimal<6> exchangeRate(12.1234);
+   value = decimal_cast<2>(decimal_cast<6>(value) * exchangeRate);
+
+   // displays: Value #5 is: 17.34
+   cout << "Value #5 is: " << value << endl;
+
+   // with doubles you would have to perform rounding each time it is required:
+   double dvalue = 143125.0;
+   dvalue += 0.11;
+   dvalue /= 1000.0;
+   dvalue = round(dvalue * 100.0)/100.0;
+   dvalue = (dvalue * 3.33) / 333.0;
+   dvalue = round(dvalue * 100.0)/100.0;
+   dvalue = dvalue * 12.1234;
+   dvalue = round(dvalue * 100.0)/100.0;
+
+   // displays: Value #5 calculated with double is: 17.34
+   cout << "Value #5 calculated with double is: " << fixed << setprecision(2) << dvalue << endl;
+}
+
 BOOST_AUTO_TEST_CASE(decimalArithmetic)
 {
    dec::decimal<2> balance;
@@ -174,12 +232,14 @@ BOOST_AUTO_TEST_CASE(decimalDivInt)
 BOOST_AUTO_TEST_CASE(decimalWithExponent)
 {
    // build positive values
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, 0),  dec::decimal<4>("11"));
    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, 2),  dec::decimal<4>("1100"));
    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, -2),  dec::decimal<4>("0.11"));
    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, 1),  dec::decimal<4>("110"));
    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, -1),  dec::decimal<4>("1.1"));
 
    // build negative values
+   BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, 0),  dec::decimal<4>("-11"));
    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, 2),  dec::decimal<4>("-1100"));
    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, -2),  dec::decimal<4>("-0.11"));
    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(-11, 1),  dec::decimal<4>("-110"));
@@ -476,4 +536,22 @@ BOOST_AUTO_TEST_CASE(decimalString)
   BOOST_TEST_MESSAGE("d: " << d);
   BOOST_TEST_MESSAGE("sneg-to-decimal: " << (fromString<decimal<4> >(sneg)));
   BOOST_CHECK(d == fromString<decimal<4> >(sneg));
+}
+
+BOOST_AUTO_TEST_CASE(decimalSign)
+{
+  dec::decimal<4> d(-4.1234);
+  BOOST_CHECK(d.sign() < 0);
+
+  d *= -1;
+  BOOST_CHECK(d.sign() > 0);
+
+  d = -d;
+  BOOST_CHECK(d.sign() < 0);
+
+  d = d.abs();
+  BOOST_CHECK(d.sign() > 0);
+
+  d -= d;
+  BOOST_CHECK(d.sign() == 0);
 }

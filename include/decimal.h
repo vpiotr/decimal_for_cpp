@@ -4,8 +4,8 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 19/09/2016
-// Version:     1.11
+// Last change: 25/09/2016
+// Version:     1.12
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -395,6 +395,14 @@ public:
       return *this;
     }
 
+    /// Returns integer indicating sign of value
+    /// -1 if value is < 0
+    /// +1 if value is > 0
+    /// 0  if value is 0
+    int sign() const {
+      return (m_value > 0)?1:((m_value < 0)?-1:0);
+    }
+
     double getAsDouble() const { return static_cast<double>(m_value) / getPrecFactorDouble(); }
 
     void setAsDouble(double value)
@@ -716,19 +724,7 @@ decimal<Prec> decimal_cast(const T &arg)
     return decimal<Prec>(arg.getUnbiased(), arg.getPrecFactor());
 }
 
-template < int Prec>
-decimal<Prec> decimal_cast(double arg)
-{
-    return decimal<Prec>(arg);
-}
-
-// Note: this specialization is required due to error in VS 2010
-// which incorrectly calculates expression like dec::decimal<6>(a * b)
-// for uint arguments. Such expression is initialized with a strange number.
-//
-// So instead of:
-//   c = dec::decimal<6>(a * b);
-// use:
+// Example of use:
 //   c = dec::decimal_cast<6>(a * b);
 template < int Prec >
 decimal<Prec> decimal_cast(uint arg)
@@ -739,6 +735,34 @@ decimal<Prec> decimal_cast(uint arg)
 
 template < int Prec >
 decimal<Prec> decimal_cast(int arg)
+{
+    decimal<Prec> result(arg);
+    return result;
+}
+
+template < int Prec >
+decimal<Prec> decimal_cast(int64 arg)
+{
+    decimal<Prec> result(arg);
+    return result;
+}
+
+template < int Prec>
+decimal<Prec> decimal_cast(double arg)
+{
+    decimal<Prec> result(arg);
+    return result;
+}
+
+template < int Prec >
+decimal<Prec> decimal_cast(const std::string &arg)
+{
+    decimal<Prec> result(arg);
+    return result;
+}
+
+template < int Prec, int N >
+decimal<Prec> decimal_cast(const char (&arg)[N])
 {
     decimal<Prec> result(arg);
     return result;
