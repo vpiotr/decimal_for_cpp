@@ -129,6 +129,9 @@ template <int Prec> struct DecimalFactor {
 template <> struct DecimalFactor<0> {
     static const int64 value = 1;
 };
+template <> struct DecimalFactor<-20> {
+	static const int64 value = 0;
+};
 
 template <> struct DecimalFactor<1> {
     static const int64 value = 10;
@@ -226,6 +229,7 @@ public:
     explicit decimal(const std::string &value) { fromString(value, *this); }
 
     ~decimal() {}
+	friend class decimal;
 
     static int64 getPrecFactor() { return DecimalFactor<Prec>::value; }
     static int getDecimalPoints() { return Prec; }
@@ -234,6 +238,17 @@ public:
         if (&rhs != this) m_value = rhs.m_value;
         return *this;
     }
+
+	template < int Prec2 >
+	decimal & operator=(const decimal<Prec2> &rhs) {
+		if (Prec2 > Prec) {
+			div_rounded(m_value, rhs.m_value,  DecimalFactor<Prec2 - Prec>::value);
+		}
+		else {
+			m_value = rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+		}
+		return *this;
+	}
 
     decimal & operator=(int64 rhs) {
         m_value = DecimalFactor<Prec>::value * rhs;
@@ -281,10 +296,39 @@ public:
         return result;
     }
 
+	template < int Prec2 >
+	const decimal operator+(const decimal<Prec2> &rhs) const {
+		decimal result = *this;
+		if (Prec2 > Prec) {
+			int64 val;
+			div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+			result.m_value += val;
+		}
+		else {
+			result.m_value += rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+		}
+
+		return result;
+	}
+
     decimal & operator+=(const decimal &rhs) {
       m_value += rhs.m_value;
       return *this;
     }
+
+	template < int Prec2 >
+	decimal & operator+=(const decimal<Prec2> &rhs) {
+		if (Prec2 > Prec) {
+			int64 val;
+			div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+			m_value += val;
+		}
+		else {
+			m_value += rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+		}
+
+		return *this;
+	}
 
     const decimal operator+() const {
        return *this;
@@ -302,10 +346,39 @@ public:
         return result;
     }
 
+	template < int Prec2 >
+	const decimal operator-(const decimal<Prec2> &rhs) const {
+		decimal result = *this;
+		if (Prec2 > Prec) {
+			int64 val;
+			div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+			result.m_value -= val;
+		}
+		else {
+			result.m_value -= rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+		}
+
+		return result;
+	}
+
     decimal & operator-=(const decimal &rhs) {
         m_value -= rhs.m_value;
         return *this;
     }
+
+	template < int Prec2 >
+	decimal & operator-=(const decimal<Prec2> &rhs) {
+		if (Prec2 > Prec) {
+			int64 val;
+			div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+			m_value -= val;
+		}
+		else {
+			m_value -= rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+		}
+
+		return *this;
+	}
 
     const decimal operator*(int rhs) const {
         decimal result = *this;
@@ -325,6 +398,13 @@ public:
         return result;
     }
 
+	template < int Prec2 >
+	const decimal operator*(const decimal<Prec2>& rhs) const {
+		decimal result = *this;
+		result.m_value = multDiv(result.m_value, rhs.m_value, DecimalFactor<Prec2>::value);
+		return result;
+	}
+
     decimal & operator*=(int rhs) {
         m_value *= rhs;
         return *this;
@@ -340,6 +420,12 @@ public:
         return *this;
     }
 
+	template < int Prec2 > 
+	decimal & operator*=(const decimal<Prec2>& rhs) {
+		m_value = multDiv(m_value, rhs.m_value, DecimalFactor<Prec2>::value);
+		return *this;
+	}
+	
     const decimal operator/(int rhs) const {
         decimal result = *this;
 
@@ -371,6 +457,13 @@ public:
         return result;
     }
 
+	template < int Prec2 >
+	const decimal operator/(const decimal<Prec2>& rhs) const {
+		decimal result = *this;
+		result.m_value = multDiv(result.m_value, DecimalFactor<Prec2>::value, rhs.m_value);
+		return result;
+	}
+
     decimal & operator/=(int rhs) {
         if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
             this->m_value =
@@ -401,7 +494,14 @@ public:
     /// 0  if value is 0
     int sign() const {
       return (m_value > 0)?1:((m_value < 0)?-1:0);
-    }
+    }
+	template < int Prec2 >
+	decimal & operator/=(const decimal<Prec2> &rhs) {
+		m_value =
+			multDiv(m_value, DecimalFactor<Prec2>::value, rhs.m_value);
+
+		return *this;
+	}
 
     double getAsDouble() const { return static_cast<double>(m_value) / getPrecFactorDouble(); }
 
@@ -577,24 +677,14 @@ protected:
     // result = (value1 * value2) / divisor
     inline static int64 multDiv(const int64 value1, const int64 value2, int64 divisor)
     {
-		const int64 value1abs = abs(value1);
-		const int64 value2abs = abs(value2);
-		const int64 divisorabs = abs(divisor);
-		const bool negative = ((value1 < 0) != (value2 < 0)) != (divisor < 0);
-
 		// we don't check for division by zero, the caller should - the next line will throw.
-		const int64 value1int = value1abs / divisor;
-		int64 value1dec = value1abs % divisor;
-		const int64 value2int = value2abs / divisor;
-		int64 value2dec = value2abs % divisor;
+		const int64 value1int = value1 / divisor;
+		int64 value1dec = value1 % divisor;
+		const int64 value2int = value2 / divisor;
+		int64 value2dec = value2 % divisor;
 
-		int64 result = value1abs * value2int
+		int64 result = value1 * value2int
 			+ value1int * value2dec;
-
-		if (negative) {
-			result = -result;
-			value1dec = -value1dec;
-		}
 
 		if (value1dec == 0 || value2dec == 0) {
 			return result;
