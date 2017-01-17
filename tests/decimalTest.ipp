@@ -10,8 +10,16 @@
 #include "decimal.h"
 #include <boost/integer_traits.hpp>
 
+/*
 template <typename T>
 std::string toString(const T &arg) {
+    std::ostringstream	out;
+    out << arg;
+    return(out.str());
+}
+*/
+
+std::string toString(unsigned int arg) {
     std::ostringstream	out;
     out << arg;
     return(out.str());
@@ -389,12 +397,12 @@ BOOST_AUTO_TEST_CASE(decimalAsInteger)
 
    // int64 value (>0)
    expectedValue = 23058430092136939;
-   dec::decimal<1> b = dec::decimal<1>(toString(expectedValue));
+   dec::decimal<1> b = dec::decimal<1>(expectedValue);
    BOOST_CHECK_EQUAL( b.getAsInteger(), expectedValue);
 
    // int64 value (<0)
    expectedValue = -23058430092136939;
-   dec::decimal<1> c = dec::decimal<1>(toString(expectedValue));
+   dec::decimal<1> c = dec::decimal<1>(expectedValue);
    BOOST_CHECK_EQUAL( c.getAsInteger(), expectedValue);
 }
 

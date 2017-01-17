@@ -5,11 +5,11 @@ Author: Piotr Likus
 
 Created: 03/01/2011
 
-Modified: 25/09/2016
+Modified: 17/01/2017
 
 Licence: BSD
 
-Version: 1.12
+Version: 1.14
 
 This data type is designed to perform calculation with on-fly  roundings
 &  to  support  correct  compare  function  (floating-point  compare  is

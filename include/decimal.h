@@ -4,8 +4,8 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 25/09/2016
-// Version:     1.12
+// Last change: 17/01/2017
+// Version:     1.14
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -102,6 +102,10 @@ typedef signed long long DEC_INT64;
 #endif
 #endif // DEC_EXTERNAL_INT64
 // <--
+
+#ifdef DEC_NO_CPP11
+#define static_assert(a,b)
+#endif
 
 typedef DEC_INT64 int64;
 // type for storing currency value internally
@@ -200,7 +204,7 @@ public:
     }
 };
 
-enum { max_decimal_points = 18, mult_prec_max_prec = 9 };
+enum { max_decimal_points = 18 };
 
 template <int Prec, class RoundPolicy = def_round_policy>
 class decimal {
@@ -234,6 +238,19 @@ public:
         if (&rhs != this) m_value = rhs.m_value;
         return *this;
     }
+
+	template < int Prec2 >
+	decimal & operator=(const decimal<Prec2> &rhs) {
+		if (Prec2 > Prec) {
+            static_assert(Prec2 > Prec, "Invalid path");
+			div_rounded(m_value, rhs.m_value,  DecimalFactor<Prec2 - Prec>::value);
+		}
+		else {
+            static_assert((Prec2 <= Prec), "Invalid path");
+			m_value = rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+		}
+		return *this;
+	}
 
     decimal & operator=(int64 rhs) {
         m_value = DecimalFactor<Prec>::value * rhs;
@@ -281,10 +298,43 @@ public:
         return result;
     }
 
+	template < int Prec2 >
+	const decimal operator+(const decimal<Prec2> &rhs) const {
+		decimal result = *this;
+		if (Prec2 > Prec) {
+			int64 val;
+            static_assert((Prec2 > Prec), "Invalid path");
+			div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+			result.m_value += val;
+		}
+		else {
+            static_assert((Prec2 <= Prec), "Invalid path");
+			result.m_value += rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+		}
+
+		return result;
+	}
+
     decimal & operator+=(const decimal &rhs) {
       m_value += rhs.m_value;
       return *this;
     }
+
+	template < int Prec2 >
+	decimal & operator+=(const decimal<Prec2> &rhs) {
+		if (Prec2 > Prec) {
+			int64 val;
+            static_assert((Prec2 > Prec), "Invalid path");
+			div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+			m_value += val;
+		}
+		else {
+            static_assert((Prec2 <= Prec), "Invalid path");
+			m_value += rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+		}
+
+		return *this;
+	}
 
     const decimal operator+() const {
        return *this;
@@ -302,10 +352,43 @@ public:
         return result;
     }
 
+	template < int Prec2 >
+	const decimal operator-(const decimal<Prec2> &rhs) const {
+		decimal result = *this;
+		if (Prec2 > Prec) {
+			int64 val;
+            static_assert((Prec2 > Prec), "Invalid path");
+			div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+			result.m_value -= val;
+		}
+		else {
+            static_assert((Prec2 <= Prec), "Invalid path");
+			result.m_value -= rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+		}
+
+		return result;
+	}
+
     decimal & operator-=(const decimal &rhs) {
         m_value -= rhs.m_value;
         return *this;
     }
+
+	template < int Prec2 >
+	decimal & operator-=(const decimal<Prec2> &rhs) {
+		if (Prec2 > Prec) {
+			int64 val;
+            static_assert((Prec2 > Prec), "Invalid path");
+			div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+			m_value -= val;
+		}
+		else {
+            static_assert((Prec2 <= Prec), "Invalid path");
+			m_value -= rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+		}
+
+		return *this;
+	}
 
     const decimal operator*(int rhs) const {
         decimal result = *this;
@@ -321,17 +404,16 @@ public:
 
     const decimal operator*(const decimal &rhs) const {
         decimal result = *this;
-        //result.m_value = (result.m_value * rhs.m_value) / DecimalFactor<Prec>::value;
-        if (Prec <= mult_prec_max_prec) {
-            result.m_value =
-                multPrec(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
-        }
-        else {
-            result.m_value =
-                multDiv(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
-        }
+        result.m_value = multDiv(result.m_value, rhs.m_value, DecimalFactor<Prec>::value);
         return result;
     }
+
+	template < int Prec2 >
+	const decimal operator*(const decimal<Prec2>& rhs) const {
+		decimal result = *this;
+		result.m_value = multDiv(result.m_value, rhs.getUnbiased(), DecimalFactor<Prec2>::value);
+		return result;
+	}
 
     decimal & operator*=(int rhs) {
         m_value *= rhs;
@@ -344,19 +426,15 @@ public:
     }
 
     decimal & operator*=(const decimal &rhs) {
-        //m_value = (m_value * rhs.m_value) / DecimalFactor<Prec>::value;
-
-        if (Prec <= mult_prec_max_prec) {
-            m_value =
-                multPrec(m_value, rhs.m_value, DecimalFactor<Prec>::value);
-        }
-        else {
-            m_value =
-                multDiv(m_value, rhs.m_value, DecimalFactor<Prec>::value);
-        }
-
+        m_value = multDiv(m_value, rhs.m_value, DecimalFactor<Prec>::value);
         return *this;
     }
+
+	template < int Prec2 >
+	decimal & operator*=(const decimal<Prec2>& rhs) {
+		m_value = multDiv(m_value, rhs.m_value, DecimalFactor<Prec2>::value);
+		return *this;
+	}
 
     const decimal operator/(int rhs) const {
         decimal result = *this;
@@ -389,6 +467,13 @@ public:
         return result;
     }
 
+	template < int Prec2 >
+	const decimal operator/(const decimal<Prec2>& rhs) const {
+		decimal result = *this;
+		result.m_value = multDiv(result.m_value, DecimalFactor<Prec2>::value, rhs.getUnbiased());
+		return result;
+	}
+
     decimal & operator/=(int rhs) {
         if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
             this->m_value =
@@ -420,6 +505,14 @@ public:
     int sign() const {
       return (m_value > 0)?1:((m_value < 0)?-1:0);
     }
+
+	template < int Prec2 >
+	decimal & operator/=(const decimal<Prec2> &rhs) {
+		m_value =
+			multDiv(m_value, DecimalFactor<Prec2>::value, rhs.m_value);
+
+		return *this;
+	}
 
     double getAsDouble() const { return static_cast<double>(m_value) / getPrecFactorDouble(); }
 
@@ -593,77 +686,70 @@ protected:
     }
 
     // result = (value1 * value2) / divisor
-    inline static int64 multDiv(int64 value1, int64 value2, int64 divisor)
+    inline static int64 multDiv(const int64 value1, const int64 value2, int64 divisor)
     {
-      const int DEC_INT64_BITCNT_NO_SIGN = 63;
+		// we don't check for division by zero, the caller should - the next line will throw.
+		const int64 value1int = value1 / divisor;
+		int64 value1dec = value1 % divisor;
+		const int64 value2int = value2 / divisor;
+		int64 value2dec = value2 % divisor;
 
-      // minimalize value1 & divisor
-      if ((value1 != 0) && (divisor != 0))
-      {
-          int64 c = gcd(value1, divisor);
-          if (c != 1) {
-              value1 /= c;
-              divisor /= c;
-          }
-      }
+		int64 result = value1 * value2int
+			+ value1int * value2dec;
 
-      // minimalize value2 & divisor
-      if ((value2 != 0) && (divisor != 0))
-      {
-          int64 c = gcd(value2, divisor);
-          if (c != 1) {
-              value2 /= c;
-              divisor /= c;
-          }
-      }
+		if (value1dec == 0 || value2dec == 0) {
+			return result;
+		}
 
-      int bitCnt1 = bitcnt(abs(value1));
-      int bitCnt2 = bitcnt(abs(value2));
+		int64 resDecPart = value1dec * value2dec;
+		if (resDecPart / value1dec == value2dec) { // no overflow
+			if (!RoundPolicy::div_rounded(resDecPart, resDecPart, divisor))
+				resDecPart = 0;
+			result += resDecPart;
+			return result;
+		}
 
-      if (bitCnt1 + bitCnt2 < DEC_INT64_BITCNT_NO_SIGN)
-      {
-          // no-overflow version
-          int64 midRes = value1 * value2;
+        // minimalize value1 & divisor
+        {
+		    int64 c = gcd(value1dec, divisor);
+            if (c != 1) {
+                value1dec /= c;
+                divisor /= c;
+            }
 
-          int64 result;
-          if (RoundPolicy::div_rounded(result, midRes, divisor))
-              return result;
-      }
+            // minimalize value2 & divisor
+            c = gcd(value2dec, divisor);
+            if (c != 1) {
+                value2dec /= c;
+                divisor /= c;
+            }
+        }
 
-      // overflow can occur - use less precise version
-      return
-          RoundPolicy::round(
-                   static_cast<cross_float>(value1)
+        int bitCnt1 = bitcnt(abs(value1dec));
+        int bitCnt2 = bitcnt(abs(value2dec));
+
+	    const int DEC_INT64_BITCNT_NO_SIGN = 63;
+	    if (bitCnt1 + bitCnt2 < DEC_INT64_BITCNT_NO_SIGN)
+        {
+            // no-overflow version
+            int64 midRes = value1dec * value2dec;
+
+		    if (RoundPolicy::div_rounded(midRes, midRes, divisor)) {
+			    result += midRes;
+			    return result;
+		    }
+        }
+
+        // overflow can occur - use less precise version
+        result +=
+            RoundPolicy::round(
+                   static_cast<cross_float>(value1dec)
                    *
-                   static_cast<cross_float>(value2)
+                   static_cast<cross_float>(value2dec)
                    /
                    static_cast<cross_float>(divisor)
-               );
-    }
-
-    inline static int64 multPrec(int64 value1, int64 value2, int64 precValue)
-    {
-        const int64 value1abs = abs(value1);
-        const int64 value2abs = abs(value2);
-        const bool negative = (value1 < 0) != (value2 < 0);
-        const int64 value1int = value1abs / precValue;
-        const int64 value1dec = value1abs % precValue;
-        const int64 value2int = value2abs / precValue;
-        const int64 value2dec = value2abs % precValue;
-
-        int64 resDecPart;
-        if (!RoundPolicy::div_rounded(resDecPart, value1dec * value2dec, precValue))
-           resDecPart = 0;
-
-        int64 result = value1int * value2int * precValue
-            + value1int * value2dec
-            + value1dec * value2int
-            + resDecPart;
-
-        if (negative)
-          result = -result;
-
-        return result;
+            );
+	    return result;
     }
 
     void init(const decimal &src) { m_value = src.m_value; }
@@ -789,8 +875,8 @@ decimal<Prec> decimal_cast(const char (&arg)[N])
 /// '.' is locale-dependent decimal point character
 /// bbbb is stream of digits before decimal point
 /// aaaa is stream of digits after decimal point
-template <int prec, typename StreamType>
-void toStream(const decimal<prec> &arg, StreamType &output) {
+template <class decimal_type, typename StreamType>
+void toStream(const decimal_type &arg, StreamType &output) {
   using namespace std;
 
   int64 before, after;
@@ -989,8 +1075,8 @@ bool fromStream(StreamType &input, decimal_type &output) {
 /// '.' is locale-dependent decimal point character
 /// bbbb is stream of digits before decimal point
 /// aaaa is stream of digits after decimal point
-template <int prec>
-std::string &toString(const decimal<prec> &arg, std::string &output) {
+template <int prec, typename roundPolicy>
+std::string &toString(const decimal<prec, roundPolicy> &arg, std::string &output) {
   using namespace std;
 
   ostringstream out;
@@ -1005,17 +1091,17 @@ std::string &toString(const decimal<prec> &arg, std::string &output) {
 /// '.' is locale-dependent decimal point character
 /// bbbb is stream of digits before decimal point
 /// aaaa is stream of digits after decimal point
-template <int prec>
-std::string toString(const decimal<prec> &arg) {
+template <int prec, typename roundPolicy>
+std::string toString(const decimal<prec, roundPolicy> &arg) {
   std::string res;
   toString(arg, res);
   return res;
 }
 
 // input
-template <class charT, class traits, class decimal_type>
+template <class charT, class traits, int prec, typename roundPolicy>
   std::basic_istream<charT, traits> &
-      operator>>(std::basic_istream<charT, traits> & is, decimal_type & d)
+      operator>>(std::basic_istream<charT, traits> & is, decimal<prec, roundPolicy> & d)
 {
   if (!fromStream(is, d))
      d.setUnbiased(0);
@@ -1023,9 +1109,9 @@ template <class charT, class traits, class decimal_type>
 }
 
 // output
-template <class charT, class traits, int prec>
+template <class charT, class traits, int prec, typename roundPolicy>
   std::basic_ostream<charT, traits> &
-    operator<<(std::basic_ostream<charT, traits> & os, const decimal<prec> & d)
+    operator<<(std::basic_ostream<charT, traits> & os, const decimal<prec, roundPolicy> & d)
 {
   toStream(d, os);
   return os;
@@ -1053,3 +1139,4 @@ void fromString(const std::string &str, T &out) {
 
 } // namespace
 #endif // _DECIMAL_H__
+
