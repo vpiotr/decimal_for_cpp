@@ -691,16 +691,6 @@ protected:
         return b;
     }
 
-    // count number of bits required to store given value
-    static int bitcnt(int64 value) {
-        int res = 0;
-        while (value != 0) {
-            value = value >> 1;
-            ++res;
-        }
-        return res;
-    }
-
     // result = (value1 * value2) / divisor
     inline static int64 multDiv(const int64 value1, const int64 value2,
             int64 divisor) {
@@ -740,16 +730,10 @@ protected:
             }
         }
 
-        int bitCnt1 = bitcnt(abs(value1dec));
-        int bitCnt2 = bitcnt(abs(value2dec));
-
-        const int DEC_INT64_BITCNT_NO_SIGN = 63;
-        if (bitCnt1 + bitCnt2 < DEC_INT64_BITCNT_NO_SIGN) {
-            // no-overflow version
-            int64 midRes = value1dec * value2dec;
-
-            if (RoundPolicy::div_rounded(midRes, midRes, divisor)) {
-                result += midRes;
+        resDecPart = value1dec * value2dec;
+        if (resDecPart / value1dec == value2dec) { // no overflow
+            if (RoundPolicy::div_rounded(resDecPart, resDecPart, divisor)) {
+                result += resDecPart;
                 return result;
             }
         }
