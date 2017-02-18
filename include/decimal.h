@@ -4,13 +4,15 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 17/01/2017
-// Version:     1.14
+// Last change: 18/02/2017
+// Version:     1.15
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
 #ifndef _DECIMAL_H__
 #define _DECIMAL_H__
+
+#include <iostream>
 
 // ----------------------------------------------------------------------------
 // Description
@@ -113,6 +115,12 @@ typedef unsigned int uint;
 // xdouble is an "extended double" - can be long double, __float128, _Quad - as you wish
 typedef long double xdouble;
 
+#ifdef DEC_CROSS_DOUBLE
+typedef double cross_float;
+#else
+typedef xdouble cross_float;
+#endif
+
 // ----------------------------------------------------------------------------
 // Forward class definitions
 // ----------------------------------------------------------------------------
@@ -120,6 +128,9 @@ typedef long double xdouble;
 // ----------------------------------------------------------------------------
 // Constants
 // ----------------------------------------------------------------------------
+enum {
+    max_decimal_points = 18
+};
 
 // ----------------------------------------------------------------------------
 // Class definitions
@@ -143,11 +154,11 @@ template<class T>
 inline int64 round(T value) {
     T val1;
 
-    if (value < 0.0)
+    if (value < 0.0) {
         val1 = value - 0.5;
-    else
+    } else {
         val1 = value + 0.5;
-
+    }
     int64 intPart = static_cast<int64>(val1);
 
     return intPart;
@@ -174,17 +185,100 @@ inline bool div_rounded(int64 &output, int64 a, int64 b) {
 
 #endif // DEC_EXTERNAL_ROUND
 
-// default rounding policy - to nearest integer
-class def_round_policy {
-public:
-    template<class T>
-    static int64 round(T value) {
-        return DEC_NAMESPACE::round(value);
+template<class RoundPolicy>
+class dec_utils {
+private:
+    int64 pow10(int n) {
+        static const int64 decimalFactorTable[] = { 1, 10, 100, 1000, 10000,
+                100000, 1000000, 10000000, 100000000, 1000000000, 10000000000,
+                100000000000, 1000000000000, 10000000000000, 100000000000000,
+                1000000000000000, 10000000000000000, 100000000000000000,
+                1000000000000000000 };
+
+        if (n >= 0 && n <= max_decimal_points) {
+            return decimalFactorTable[n];
+        } else {
+            return 0;
+        }
     }
 
-    static bool div_rounded(int64 &output, int64 a, int64 b) {
-        return DEC_NAMESPACE::div_rounded(output, a, b);
+    // calculate greatest common divisor
+    static int64 gcd(int64 a, int64 b) {
+        int64 c;
+        while (a != 0) {
+            c = a;
+            a = b % a;
+            b = c;
+        }
+        return b;
     }
+
+    // count number of bits required to store given value
+    static int bitcnt(int64 value) {
+        int res = 0;
+        while (value != 0) {
+            value = value >> 1;
+            ++res;
+        }
+        return res;
+    }
+
+public:
+    // result = (value1 * value2) / divisor
+    inline static int64 multDiv(const int64 value1, const int64 value2,
+            int64 divisor) {
+        // we don't check for division by zero, the caller should - the next line will throw.
+        const int64 value1int = value1 / divisor;
+        int64 value1dec = value1 % divisor;
+        const int64 value2int = value2 / divisor;
+        int64 value2dec = value2 % divisor;
+
+        int64 result = value1 * value2int + value1int * value2dec;
+
+        if (value1dec == 0 || value2dec == 0) {
+            return result;
+        }
+
+        int64 resDecPart = value1dec * value2dec;
+        if (resDecPart / value1dec == value2dec) { // no overflow
+            if (!RoundPolicy::div_rounded(resDecPart, resDecPart, divisor))
+                resDecPart = 0;
+            result += resDecPart;
+            return result;
+        }
+
+        // minimalize value1 & divisor
+        {
+            int64 c = gcd(value1dec, divisor);
+            if (c != 1) {
+                value1dec /= c;
+                divisor /= c;
+            }
+
+            // minimalize value2 & divisor
+            c = gcd(value2dec, divisor);
+            if (c != 1) {
+                value2dec /= c;
+                divisor /= c;
+            }
+        }
+
+        resDecPart = value1dec * value2dec;
+        if (resDecPart / value1dec == value2dec) { // no overflow
+            if (RoundPolicy::div_rounded(resDecPart, resDecPart, divisor)) {
+                result += resDecPart;
+                return result;
+            }
+        }
+
+        // overflow can occur - use less precise version
+        result += RoundPolicy::round(
+                static_cast<cross_float>(value1dec)
+                        * static_cast<cross_float>(value2dec)
+                        / static_cast<cross_float>(divisor));
+        return result;
+    }
+
 };
 
 // no-rounding policy (decimal places stripped)
@@ -201,8 +295,285 @@ public:
     }
 };
 
-enum {
-    max_decimal_points = 18
+// default rounding policy - arithmetic, to nearest integer
+class def_round_policy {
+public:
+    template<class T>
+    static int64 round(T value) {
+        return DEC_NAMESPACE::round(value);
+    }
+
+    static bool div_rounded(int64 &output, int64 a, int64 b) {
+        return DEC_NAMESPACE::div_rounded(output, a, b);
+    }
+};
+
+class half_down_round_policy {
+public:
+    template<class T>
+    static int64 round(T value) {
+        T val1;
+        T decimals;
+
+        if (value >= 0.0) {
+            decimals = value - floor(value);
+            if (decimals > 0.5) {
+                val1 = ceil(value);
+            } else {
+                val1 = value;
+            }
+        } else {
+            decimals = std::abs(value + floor(std::abs(value)));
+            if (decimals < 0.5) {
+                val1 = ceil(value);
+            } else {
+                val1 = value;
+            }
+        }
+
+        return static_cast<int64>(floor(val1));
+    }
+
+    static bool div_rounded(int64 &output, int64 a, int64 b) {
+        int64 divisorCorr = std::abs(b) / 2;
+        int64 remainder = std::abs(a) % std::abs(b);
+
+        if (a >= 0) {
+            if (DEC_MAX_INT64 - a >= divisorCorr) {
+                if (remainder > divisorCorr) {
+                    output = (a + divisorCorr) / b;
+                } else {
+                    output = a / b;
+                }
+                return true;
+            }
+        } else {
+            if (-(DEC_MIN_INT64 - a) >= divisorCorr) {
+                output = (a - divisorCorr) / b;
+                return true;
+            }
+        }
+
+        output = 0;
+        return false;
+    }
+};
+
+class half_up_round_policy {
+public:
+    template<class T>
+    static int64 round(T value) {
+        T val1;
+        T decimals;
+
+        if (value >= 0.0) {
+            decimals = value - floor(value);
+            if (decimals >= 0.5) {
+                val1 = ceil(value);
+            } else {
+                val1 = value;
+            }
+        } else {
+            decimals = std::abs(value + floor(std::abs(value)));
+            if (decimals <= 0.5) {
+                val1 = ceil(value);
+            } else {
+                val1 = value;
+            }
+        }
+
+        return static_cast<int64>(floor(val1));
+    }
+
+    static bool div_rounded(int64 &output, int64 a, int64 b) {
+        int64 divisorCorr = std::abs(b) / 2;
+        int64 remainder = std::abs(a) % std::abs(b);
+
+        if (a >= 0) {
+            if (DEC_MAX_INT64 - a >= divisorCorr) {
+                if (remainder >= divisorCorr) {
+                    output = (a + divisorCorr) / b;
+                } else {
+                    output = a / b;
+                }
+                return true;
+            }
+        } else {
+            if (-(DEC_MIN_INT64 - a) >= divisorCorr) {
+                if (remainder < divisorCorr) {
+                    output = (a - remainder) / b;
+                } else if (remainder == divisorCorr) {
+                    output = (a + divisorCorr) / b;
+                } else {
+                    output = (a + remainder - std::abs(b)) / b;
+                }
+                return true;
+            }
+        }
+
+        output = 0;
+        return false;
+    }
+};
+
+// bankers' rounding
+class half_even_round_policy {
+public:
+    template<class T>
+    static int64 round(T value) {
+        T val1;
+        T decimals;
+
+        if (value >= 0.0) {
+            decimals = value - floor(value);
+            if (decimals > 0.5) {
+                val1 = ceil(value);
+            } else if (decimals < 0.5) {
+                val1 = floor(value);
+            } else {
+                bool is_even = (static_cast<int64>(value - decimals) % 2 == 0);
+                if (is_even) {
+                    val1 = floor(value);
+                } else {
+                    val1 = ceil(value);
+                }
+            }
+        } else {
+            decimals = std::abs(value + floor(std::abs(value)));
+            if (decimals > 0.5) {
+                val1 = floor(value);
+            } else if (decimals < 0.5) {
+                val1 = ceil(value);
+            } else {
+                bool is_even = (static_cast<int64>(value + decimals) % 2 == 0);
+                if (is_even) {
+                    val1 = ceil(value);
+                } else {
+                    val1 = floor(value);
+                }
+            }
+        }
+
+        return static_cast<int64>(val1);
+    }
+
+    static bool div_rounded(int64 &output, int64 a, int64 b) {
+        int64 divisorDiv2 = std::abs(b) / 2;
+        int64 remainder = std::abs(a) % std::abs(b);
+
+        if (remainder == 0) {
+            output = a / b;
+        } else {
+            if (a >= 0) {
+
+                if (remainder > divisorDiv2) {
+                    output = (a - remainder + std::abs(b)) / b;
+                } else if (remainder < divisorDiv2) {
+                    output = (a - remainder) / b;
+                } else {
+                    bool is_even = std::abs(a / b) % 2 == 0;
+                    if (is_even) {
+                        output = a / b;
+                    } else {
+                        output = (a - remainder + std::abs(b)) / b;
+                    }
+                }
+            } else {
+                // negative value
+                if (remainder > divisorDiv2) {
+                    output = (a + remainder - std::abs(b)) / b;
+                } else if (remainder < divisorDiv2) {
+                    output = (a + remainder) / b;
+                } else {
+                    bool is_even = std::abs(a / b) % 2 == 0;
+                    if (is_even) {
+                        output = a / b;
+                    } else {
+                        output = (a + remainder - std::abs(b)) / b;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+};
+
+// round towards +infinity
+class ceiling_round_policy {
+public:
+    template<class T>
+    static int64 round(T value) {
+        return static_cast<int64>(ceil(value));
+    }
+
+    static bool div_rounded(int64 &output, int64 a, int64 b) {
+        int64 remainder = std::abs(a) % std::abs(b);
+        if (remainder == 0) {
+            output = a / b;
+        } else {
+            if (a >= 0) {
+                output = (a + std::abs(b)) / b;
+            } else {
+                output = a / b;
+            }
+        }
+        return true;
+    }
+};
+
+// round towards -infinity
+class floor_round_policy {
+public:
+    template<class T>
+    static int64 round(T value) {
+        return static_cast<int64>(floor(value));
+    }
+
+    static bool div_rounded(int64 &output, int64 a, int64 b) {
+        int64 remainder = std::abs(a) % std::abs(b);
+        if (remainder == 0) {
+            output = a / b;
+        } else {
+            if (a >= 0) {
+                output = (a - remainder) / b;
+            } else {
+                output = (a + remainder - std::abs(b)) / b;
+            }
+        }
+        return true;
+    }
+};
+
+// round towards zero = truncate
+class round_down_round_policy: public null_round_policy {
+};
+
+// round away from zero
+class round_up_round_policy {
+public:
+    template<class T>
+    static int64 round(T value) {
+        if (value >= 0.0) {
+            return static_cast<int64>(ceil(value));
+        } else {
+            return static_cast<int64>(floor(value));
+        }
+    }
+
+    static bool div_rounded(int64 &output, int64 a, int64 b) {
+        int64 remainder = std::abs(a) % std::abs(b);
+        if (remainder == 0) {
+            output = a / b;
+        } else {
+            if (a >= 0) {
+                output = (a + std::abs(b)) / b;
+            } else {
+                output = (a - std::abs(b)) / b;
+            }
+        }
+        return true;
+    }
 };
 
 template<int Prec, class RoundPolicy = def_round_policy>
@@ -212,12 +583,6 @@ public:
     enum {
         decimal_points = Prec
     };
-
-#ifdef DEC_CROSS_DOUBLE
-    typedef double cross_float;
-#else
-    typedef xdouble cross_float;
-#endif
 
     decimal() {
         init(0);
@@ -270,7 +635,7 @@ public:
     decimal & operator=(const decimal<Prec2> &rhs) {
         if (Prec2 > Prec) {
             static_assert(Prec2 > Prec, "Invalid path");
-            div_rounded(m_value, rhs.m_value,
+            RoundPolicy::div_rounded(m_value, rhs.m_value,
                     DecimalFactor<Prec2 - Prec>::value);
         } else {
             static_assert((Prec2 <= Prec), "Invalid path");
@@ -331,7 +696,8 @@ public:
         if (Prec2 > Prec) {
             int64 val;
             static_assert((Prec2 > Prec), "Invalid path");
-            div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+            RoundPolicy::div_rounded(val, rhs.m_value,
+                    DecimalFactor<Prec2 - Prec>::value);
             result.m_value += val;
         } else {
             static_assert((Prec2 <= Prec), "Invalid path");
@@ -351,7 +717,8 @@ public:
         if (Prec2 > Prec) {
             int64 val;
             static_assert((Prec2 > Prec), "Invalid path");
-            div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+            RoundPolicy::div_rounded(val, rhs.m_value,
+                    DecimalFactor<Prec2 - Prec>::value);
             m_value += val;
         } else {
             static_assert((Prec2 <= Prec), "Invalid path");
@@ -383,7 +750,8 @@ public:
         if (Prec2 > Prec) {
             int64 val;
             static_assert((Prec2 > Prec), "Invalid path");
-            div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+            RoundPolicy::div_rounded(val, rhs.m_value,
+                    DecimalFactor<Prec2 - Prec>::value);
             result.m_value -= val;
         } else {
             static_assert((Prec2 <= Prec), "Invalid path");
@@ -403,7 +771,8 @@ public:
         if (Prec2 > Prec) {
             int64 val;
             static_assert((Prec2 > Prec), "Invalid path");
-            div_rounded(val, rhs.m_value, DecimalFactor<Prec2 - Prec>::value);
+            RoundPolicy::div_rounded(val, rhs.m_value,
+                    DecimalFactor<Prec2 - Prec>::value);
             m_value -= val;
         } else {
             static_assert((Prec2 <= Prec), "Invalid path");
@@ -427,16 +796,16 @@ public:
 
     const decimal operator*(const decimal &rhs) const {
         decimal result = *this;
-        result.m_value = multDiv(result.m_value, rhs.m_value,
-                DecimalFactor<Prec>::value);
+        result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
+                rhs.m_value, DecimalFactor<Prec>::value);
         return result;
     }
 
     template<int Prec2>
     const decimal operator*(const decimal<Prec2>& rhs) const {
         decimal result = *this;
-        result.m_value = multDiv(result.m_value, rhs.getUnbiased(),
-                DecimalFactor<Prec2>::value);
+        result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
+                rhs.getUnbiased(), DecimalFactor<Prec2>::value);
         return result;
     }
 
@@ -451,13 +820,15 @@ public:
     }
 
     decimal & operator*=(const decimal &rhs) {
-        m_value = multDiv(m_value, rhs.m_value, DecimalFactor<Prec>::value);
+        m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.m_value,
+                DecimalFactor<Prec>::value);
         return *this;
     }
 
     template<int Prec2>
     decimal & operator*=(const decimal<Prec2>& rhs) {
-        m_value = multDiv(m_value, rhs.m_value, DecimalFactor<Prec2>::value);
+        m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.m_value,
+                DecimalFactor<Prec2>::value);
         return *this;
     }
 
@@ -465,7 +836,8 @@ public:
         decimal result = *this;
 
         if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs)) {
-            result.m_value = multDiv(result.m_value, 1, rhs);
+            result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value, 1,
+                    rhs);
         }
 
         return result;
@@ -475,7 +847,8 @@ public:
         decimal result = *this;
 
         if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs)) {
-            result.m_value = multDiv(result.m_value, 1, rhs);
+            result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value, 1,
+                    rhs);
         }
 
         return result;
@@ -484,8 +857,8 @@ public:
     const decimal operator/(const decimal &rhs) const {
         decimal result = *this;
         //result.m_value = (result.m_value * DecimalFactor<Prec>::value) / rhs.m_value;
-        result.m_value = multDiv(result.m_value, DecimalFactor<Prec>::value,
-                rhs.m_value);
+        result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
+                DecimalFactor<Prec>::value, rhs.m_value);
 
         return result;
     }
@@ -493,28 +866,31 @@ public:
     template<int Prec2>
     const decimal operator/(const decimal<Prec2>& rhs) const {
         decimal result = *this;
-        result.m_value = multDiv(result.m_value, DecimalFactor<Prec2>::value,
-                rhs.getUnbiased());
+        result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
+                DecimalFactor<Prec2>::value, rhs.getUnbiased());
         return result;
     }
 
     decimal & operator/=(int rhs) {
         if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
-            this->m_value = multDiv(this->m_value, 1, rhs);
+            this->m_value = dec_utils<RoundPolicy>::multDiv(this->m_value, 1,
+                    rhs);
         }
         return *this;
     }
 
     decimal & operator/=(int64 rhs) {
         if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
-            this->m_value = multDiv(this->m_value, 1, rhs);
+            this->m_value = dec_utils<RoundPolicy>::multDiv(this->m_value, 1,
+                    rhs);
         }
         return *this;
     }
 
     decimal & operator/=(const decimal &rhs) {
         //m_value = (m_value * DecimalFactor<Prec>::value) / rhs.m_value;
-        m_value = multDiv(m_value, DecimalFactor<Prec>::value, rhs.m_value);
+        m_value = dec_utils<RoundPolicy>::multDiv(m_value,
+                DecimalFactor<Prec>::value, rhs.m_value);
 
         return *this;
     }
@@ -529,7 +905,8 @@ public:
 
     template<int Prec2>
     decimal & operator/=(const decimal<Prec2> &rhs) {
-        m_value = multDiv(m_value, DecimalFactor<Prec2>::value, rhs.m_value);
+        m_value = dec_utils<RoundPolicy>::multDiv(m_value,
+                DecimalFactor<Prec2>::value, rhs.m_value);
 
         return *this;
     }
@@ -666,86 +1043,6 @@ protected:
         return static_cast<double>(DecimalFactor<Prec>::value);
     }
 
-    int64 pow10(int n) {
-        static const int64 decimalFactorTable[] = { 1, 10, 100, 1000, 10000,
-                100000, 1000000, 10000000, 100000000, 1000000000, 10000000000,
-                100000000000, 1000000000000, 10000000000000, 100000000000000,
-                1000000000000000, 10000000000000000, 100000000000000000,
-                1000000000000000000 };
-
-        if (n >= 0 && n <= max_decimal_points) {
-            return decimalFactorTable[n];
-        } else {
-            return 0;
-        }
-    }
-
-    // calculate greatest common divisor
-    static int64 gcd(int64 a, int64 b) {
-        int64 c;
-        while (a != 0) {
-            c = a;
-            a = b % a;
-            b = c;
-        }
-        return b;
-    }
-
-    // result = (value1 * value2) / divisor
-    inline static int64 multDiv(const int64 value1, const int64 value2,
-            int64 divisor) {
-        // we don't check for division by zero, the caller should - the next line will throw.
-        const int64 value1int = value1 / divisor;
-        int64 value1dec = value1 % divisor;
-        const int64 value2int = value2 / divisor;
-        int64 value2dec = value2 % divisor;
-
-        int64 result = value1 * value2int + value1int * value2dec;
-
-        if (value1dec == 0 || value2dec == 0) {
-            return result;
-        }
-
-        int64 resDecPart = value1dec * value2dec;
-        if (resDecPart / value1dec == value2dec) { // no overflow
-            if (!RoundPolicy::div_rounded(resDecPart, resDecPart, divisor))
-                resDecPart = 0;
-            result += resDecPart;
-            return result;
-        }
-
-        // minimalize value1 & divisor
-        {
-            int64 c = gcd(value1dec, divisor);
-            if (c != 1) {
-                value1dec /= c;
-                divisor /= c;
-            }
-
-            // minimalize value2 & divisor
-            c = gcd(value2dec, divisor);
-            if (c != 1) {
-                value2dec /= c;
-                divisor /= c;
-            }
-        }
-
-        resDecPart = value1dec * value2dec;
-        if (resDecPart / value1dec == value2dec) { // no overflow
-            if (RoundPolicy::div_rounded(resDecPart, resDecPart, divisor)) {
-                result += resDecPart;
-                return result;
-            }
-        }
-
-        // overflow can occur - use less precise version
-        result += RoundPolicy::round(
-                static_cast<cross_float>(value1dec)
-                        * static_cast<cross_float>(value2dec)
-                        / static_cast<cross_float>(divisor));
-        return result;
-    }
-
     void init(const decimal &src) {
         m_value = src.m_value;
     }
@@ -848,6 +1145,43 @@ decimal<Prec> decimal_cast(const std::string &arg) {
 template<int Prec, int N>
 decimal<Prec> decimal_cast(const char (&arg)[N]) {
     decimal<Prec> result(arg);
+    return result;
+}
+
+// with rounding policy
+template<int Prec, typename RoundPolicy>
+decimal<Prec, RoundPolicy> decimal_cast(uint arg) {
+    decimal<Prec, RoundPolicy> result(arg);
+    return result;
+}
+
+template<int Prec, typename RoundPolicy>
+decimal<Prec, RoundPolicy> decimal_cast(int arg) {
+    decimal<Prec, RoundPolicy> result(arg);
+    return result;
+}
+
+template<int Prec, typename RoundPolicy>
+decimal<Prec, RoundPolicy> decimal_cast(int64 arg) {
+    decimal<Prec, RoundPolicy> result(arg);
+    return result;
+}
+
+template<int Prec, typename RoundPolicy>
+decimal<Prec, RoundPolicy> decimal_cast(double arg) {
+    decimal<Prec, RoundPolicy> result(arg);
+    return result;
+}
+
+template<int Prec, typename RoundPolicy>
+decimal<Prec, RoundPolicy> decimal_cast(const std::string &arg) {
+    decimal<Prec, RoundPolicy> result(arg);
+    return result;
+}
+
+template<int Prec, typename RoundPolicy, int N>
+decimal<Prec, RoundPolicy> decimal_cast(const char (&arg)[N]) {
+    decimal<Prec, RoundPolicy> result(arg);
     return result;
 }
 

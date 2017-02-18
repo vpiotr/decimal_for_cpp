@@ -448,6 +448,337 @@ BOOST_AUTO_TEST_CASE(decimalNoRoundPolicy)
   BOOST_CHECK(c == expected);
 }
 
+template<int Prec, class RoundPolicy>
+class round_tester_t {
+public:
+    round_tester_t(const std::string &name): m_name(name) {  }
+
+    void test_assign(const std::string &src_value, const std::string &expected_value) {
+       dec::decimal<Prec, RoundPolicy> a;
+       dec::decimal<Prec, RoundPolicy> expected;
+
+       a = dec::decimal<Prec, RoundPolicy>(src_value);
+       expected = dec::decimal<Prec, RoundPolicy>(expected_value);
+
+       BOOST_CHECK_MESSAGE( a == expected, "assign decimal<" << Prec << ", " << m_name << ">(" << src_value << ") is " << a << ", expecting: " << expected_value );
+    }
+
+    void test_div2(const std::string &src_value, const std::string &expected_value) {
+       dec::decimal<Prec, RoundPolicy> a;
+       dec::decimal<Prec, RoundPolicy> expected;
+
+       a = dec::decimal<Prec, RoundPolicy>(src_value) / dec::decimal<Prec, RoundPolicy>("2.0");
+       expected = dec::decimal<Prec, RoundPolicy>(expected_value);
+
+       BOOST_CHECK_MESSAGE( a == expected, "div2 decimal<" << Prec << ", " << m_name << ">(" << src_value << ") is " << a << ", expecting: " << expected_value );
+    }
+
+    void test_div(const std::string &a_value, int b_value, const std::string &expected_value) {
+       dec::decimal<Prec, RoundPolicy> a;
+       dec::decimal<Prec, RoundPolicy> expected;
+
+       a = dec::decimal<Prec, RoundPolicy>(a_value) / dec::decimal_cast<Prec, RoundPolicy>(b_value);
+       expected = dec::decimal<Prec, RoundPolicy>(expected_value);
+
+       BOOST_CHECK_MESSAGE( a == expected, "divn decimal<" << Prec << ", " << m_name << ">(" << a_value << ", " << b_value << ") is " << a << ", expecting: " << expected_value );
+    }
+
+private:
+    std::string m_name;
+};
+
+BOOST_AUTO_TEST_CASE(decimalRoundingPolicyOther)
+{
+    using namespace dec;
+    {
+        round_tester_t<1, def_round_policy> tester("default");
+
+        tester.test_assign("0.16", "0.2");
+        tester.test_assign("0.15", "0.2");
+        tester.test_assign("0.14", "0.1");
+
+        tester.test_assign("0.06", "0.1");
+        tester.test_assign("0.05", "0.1");
+        tester.test_assign("0.04", "0.0");
+
+        tester.test_assign("-0.04", "-0.0");
+        tester.test_assign("-0.05", "-0.1");
+        tester.test_assign("-0.06", "-0.1");
+
+        tester.test_assign("-0.14", "-0.1");
+        tester.test_assign("-0.15", "-0.2");
+        tester.test_assign("-0.16", "-0.2");
+
+        tester.test_div("3.20", 20, "0.2");
+        tester.test_div("3.00", 20, "0.2");
+        tester.test_div("2.80", 20, "0.1");
+
+        tester.test_div("1.20", 20, "0.1");
+        tester.test_div("1.00", 20, "0.1");
+        tester.test_div("0.80", 20, "0.0");
+
+        tester.test_div("-0.80", 20, "-0.0");
+        tester.test_div("-1.00", 20, "-0.1");
+        tester.test_div("-1.20", 20, "-0.1");
+
+        tester.test_div("-2.80", 20, "-0.1");
+        tester.test_div("-3.00", 20, "-0.2");
+        tester.test_div("-3.20", 20, "-0.2");
+    }
+
+    {
+        round_tester_t<1, half_down_round_policy> tester("half_down");
+
+        tester.test_assign("0.16", "0.2");
+        tester.test_assign("0.15", "0.1");
+        tester.test_assign("0.14", "0.1");
+
+        tester.test_assign("0.06", "0.1");
+        tester.test_assign("0.05", "0.0");
+        tester.test_assign("0.04", "0.0");
+
+        tester.test_assign("-0.04", "0.0");
+        tester.test_assign("-0.05", "-0.1");
+        tester.test_assign("-0.06", "-0.1");
+
+        tester.test_assign("-0.14", "-0.1");
+        tester.test_assign("-0.15", "-0.2");
+        tester.test_assign("-0.16", "-0.2");
+
+        tester.test_div("3.20", 20, "0.2");
+        tester.test_div("3.00", 20, "0.1");
+        tester.test_div("2.80", 20, "0.1");
+
+        tester.test_div("1.20", 20, "0.1");
+        tester.test_div("1.00", 20, "0.0");
+        tester.test_div("0.80", 20, "0.0");
+
+        tester.test_div("-0.80", 20, "0.0");
+        tester.test_div("-1.00", 20, "-0.1");
+        tester.test_div("-1.20", 20, "-0.1");
+
+        tester.test_div("-2.80", 20, "-0.1");
+        tester.test_div("-3.00", 20, "-0.2");
+        tester.test_div("-3.20", 20, "-0.2");
+    }
+
+    {
+        round_tester_t<1, half_up_round_policy> tester("half_up");
+
+        tester.test_assign("0.16", "0.2");
+        tester.test_assign("0.15", "0.2");
+        tester.test_assign("0.14", "0.1");
+
+        tester.test_assign("0.06", "0.1");
+        tester.test_assign("0.05", "0.1");
+        tester.test_assign("0.04", "0.0");
+
+        tester.test_assign("-0.04", "0.0");
+        tester.test_assign("-0.05", "-0.0");
+        tester.test_assign("-0.06", "-0.1");
+
+        tester.test_assign("-0.14", "-0.1");
+        tester.test_assign("-0.15", "-0.1");
+        tester.test_assign("-0.16", "-0.2");
+
+        tester.test_div("3.20", 20, "0.2");
+        tester.test_div("3.00", 20, "0.2");
+        tester.test_div("2.80", 20, "0.1");
+
+        tester.test_div("1.20", 20, "0.1");
+        tester.test_div("1.00", 20, "0.1");
+        tester.test_div("0.80", 20, "0.0");
+
+        tester.test_div("-0.80", 20, "0.0");
+        tester.test_div("-1.00", 20, "-0.0");
+        tester.test_div("-1.20", 20, "-0.1");
+
+        tester.test_div("-2.80", 20, "-0.1");
+        tester.test_div("-3.00", 20, "-0.1");
+        tester.test_div("-3.20", 20, "-0.2");
+    }
+
+    {
+        round_tester_t<1, ceiling_round_policy> tester("ceiling");
+
+        tester.test_assign("0.16", "0.2");
+        tester.test_assign("0.15", "0.2");
+        tester.test_assign("0.14", "0.2");
+
+        tester.test_assign("0.06", "0.1");
+        tester.test_assign("0.05", "0.1");
+        tester.test_assign("0.04", "0.1");
+
+        tester.test_assign("-0.04", "0.0");
+        tester.test_assign("-0.05", "0.0");
+        tester.test_assign("-0.06", "0.0");
+
+        tester.test_assign("-0.14", "-0.1");
+        tester.test_assign("-0.15", "-0.1");
+        tester.test_assign("-0.16", "-0.1");
+
+        tester.test_div("3.20", 20, "0.2");
+        tester.test_div("3.00", 20, "0.2");
+        tester.test_div("2.80", 20, "0.2");
+
+        tester.test_div("1.20", 20, "0.1");
+        tester.test_div("1.00", 20, "0.1");
+        tester.test_div("0.80", 20, "0.1");
+
+        tester.test_div("-0.80", 20, "0.0");
+        tester.test_div("-1.00", 20, "0.0");
+        tester.test_div("-1.20", 20, "0.0");
+
+        tester.test_div("-2.80", 20, "-0.1");
+        tester.test_div("-3.00", 20, "-0.1");
+        tester.test_div("-3.20", 20, "-0.1");
+    }
+
+    {
+        round_tester_t<1, floor_round_policy> tester("floor");
+
+        tester.test_assign("0.16", "0.1");
+        tester.test_assign("0.15", "0.1");
+        tester.test_assign("0.14", "0.1");
+
+        tester.test_assign("0.06", "0.0");
+        tester.test_assign("0.05", "0.0");
+        tester.test_assign("0.04", "0.0");
+
+        tester.test_assign("-0.04", "-0.1");
+        tester.test_assign("-0.05", "-0.1");
+        tester.test_assign("-0.06", "-0.1");
+
+        tester.test_assign("-0.14", "-0.2");
+        tester.test_assign("-0.15", "-0.2");
+        tester.test_assign("-0.16", "-0.2");
+
+        tester.test_div("3.20", 20, "0.1");
+        tester.test_div("3.00", 20, "0.1");
+        tester.test_div("2.80", 20, "0.1");
+
+        tester.test_div("1.20", 20, "0.0");
+        tester.test_div("1.00", 20, "0.0");
+        tester.test_div("0.80", 20, "0.0");
+
+        tester.test_div("-0.80", 20, "-0.1");
+        tester.test_div("-1.00", 20, "-0.1");
+        tester.test_div("-1.20", 20, "-0.1");
+
+        tester.test_div("-2.80", 20, "-0.2");
+        tester.test_div("-3.00", 20, "-0.2");
+        tester.test_div("-3.20", 20, "-0.2");
+    }
+
+    {
+        round_tester_t<1, round_down_round_policy> tester("round-down");
+
+        tester.test_assign("0.16", "0.1");
+        tester.test_assign("0.15", "0.1");
+        tester.test_assign("0.14", "0.1");
+
+        tester.test_assign("0.06", "0.0");
+        tester.test_assign("0.05", "0.0");
+        tester.test_assign("0.04", "0.0");
+
+        tester.test_assign("-0.04", "0.0");
+        tester.test_assign("-0.05", "0.0");
+        tester.test_assign("-0.06", "0.0");
+
+        tester.test_assign("-0.14", "-0.1");
+        tester.test_assign("-0.15", "-0.1");
+        tester.test_assign("-0.16", "-0.1");
+
+        tester.test_div("3.20", 20, "0.1");
+        tester.test_div("3.00", 20, "0.1");
+        tester.test_div("2.80", 20, "0.1");
+
+        tester.test_div("1.2", 20, "0.0");
+        tester.test_div("1.0", 20, "0.0");
+        tester.test_div("0.8", 20, "0.0");
+
+        tester.test_div("-0.80", 20, "0.0");
+        tester.test_div("-1.00", 20, "0.0");
+        tester.test_div("-1.20", 20, "0.0");
+
+        tester.test_div("-2.80", 20, "-0.1");
+        tester.test_div("-3.00", 20, "-0.1");
+        tester.test_div("-3.20", 20, "-0.1");
+    }
+
+    {
+        round_tester_t<1, round_up_round_policy> tester("round-up");
+
+        tester.test_assign("0.16", "0.2");
+        tester.test_assign("0.15", "0.2");
+        tester.test_assign("0.14", "0.2");
+
+        tester.test_assign("0.06", "0.1");
+        tester.test_assign("0.05", "0.1");
+        tester.test_assign("0.04", "0.1");
+
+        tester.test_assign("-0.04", "-0.1");
+        tester.test_assign("-0.05", "-0.1");
+        tester.test_assign("-0.06", "-0.1");
+
+        tester.test_assign("-0.14", "-0.2");
+        tester.test_assign("-0.15", "-0.2");
+        tester.test_assign("-0.16", "-0.2");
+
+        tester.test_div("3.20", 20, "0.2");
+        tester.test_div("3.00", 20, "0.2");
+        tester.test_div("2.80", 20, "0.2");
+
+        tester.test_div("1.20", 20, "0.1");
+        tester.test_div("1.00", 20, "0.1");
+        tester.test_div("0.80", 20, "0.1");
+
+        tester.test_div("-0.80", 20, "-0.1");
+        tester.test_div("-1.00", 20, "-0.1");
+        tester.test_div("-1.20", 20, "-0.1");
+
+        tester.test_div("-2.80", 20, "-0.2");
+        tester.test_div("-3.00", 20, "-0.2");
+        tester.test_div("-3.20", 20, "-0.2");
+    }
+
+    {
+        round_tester_t<1, half_even_round_policy> tester("half-even");
+
+        tester.test_assign("0.16", "0.2");
+        tester.test_assign("0.15", "0.2");
+        tester.test_assign("0.14", "0.1");
+
+        tester.test_assign("0.06", "0.1");
+        tester.test_assign("0.05", "0.0");
+        tester.test_assign("0.04", "0.0");
+
+        tester.test_assign("-0.04", "0.0");
+        tester.test_assign("-0.05", "0.0");
+        tester.test_assign("-0.06", "-0.1");
+
+        tester.test_assign("-0.14", "-0.1");
+        tester.test_assign("-0.15", "-0.2");
+        tester.test_assign("-0.16", "-0.2");
+
+        tester.test_div("3.20", 20, "0.2");
+        tester.test_div("3.00", 20, "0.2");
+        tester.test_div("2.80", 20, "0.1");
+
+        tester.test_div("1.20", 20, "0.1");
+        tester.test_div("1.00", 20, "0.0");
+        tester.test_div("0.80", 20, "0.0");
+
+        tester.test_div("-0.80", 20, "0.0");
+        tester.test_div("-1.00", 20, "0.0");
+        tester.test_div("-1.20", 20, "-0.1");
+
+        tester.test_div("-2.80", 20, "-0.1");
+        tester.test_div("-3.00", 20, "-0.2");
+        tester.test_div("-3.20", 20, "-0.2");
+    }
+}
+
 BOOST_AUTO_TEST_CASE(decimalUnpack)
 {
   using namespace dec;
@@ -562,4 +893,62 @@ BOOST_AUTO_TEST_CASE(decimalSign)
 
   d -= d;
   BOOST_CHECK(d.sign() == 0);
+}
+
+class mult_div_tester {
+public:
+    void test_md(dec::int64 a, dec::int64 b, dec::int64 divisor, dec::int64 expected) {
+       using namespace dec;
+       int64 res = dec_utils<def_round_policy>::multDiv(a, b, divisor);
+
+       BOOST_CHECK_MESSAGE( res == expected, "multDiv(" << a << ", " << b << ", " << divisor << ") is " << res << ", expecting: " << expected );
+    }
+};
+
+BOOST_AUTO_TEST_CASE(multDiv)
+{
+
+    {
+
+     //test condition:
+     //   if ((value1 % divisor) == 0 || (value2 % divisor == 0)) {
+     //       return value1 * (value2 / divisor) + (value1 / divisor) * (value2 % divisor);
+     //   }
+
+       mult_div_tester tester;
+
+       tester.test_md(333, 425, 3, 47175);
+       tester.test_md(425, 333, 3, 47175);
+
+       tester.test_md(-333, 425, 3, -47175);
+       tester.test_md(-425, 333, 3, -47175);
+
+       tester.test_md(333, -425, 3, -47175);
+       tester.test_md(425, -333, 3, -47175);
+
+       tester.test_md(-333, -425, 3, 47175);
+       tester.test_md(-425, -333, 3, 47175);
+
+     //test condition:
+     // if both modulo != 0 and no overflow in x = (value1 % divisor) * (value2 % divisor) then
+     //    add div_policy.div_rounded(x, divisor) to result and return
+
+       tester.test_md(333, 424, 5, 28238); // round down
+       tester.test_md(333, 593, 7, 28210); // round up
+
+       tester.test_md(-333, 424, 5, -28238);
+       tester.test_md(-333, 593, 7, -28210);
+
+       tester.test_md(333, -424, 5, -28238);
+       tester.test_md(333, -593, 7, -28210);
+
+       tester.test_md(-333, -424, 5, 28238);
+       tester.test_md(-333, -593, 7, 28210);
+
+     // test step 3/4 - with overflow on x on decimal part but one of decimal parts has gcd with divisor > 1
+       tester.test_md(438241312999, 3681227029158, 876482625990, 1840613514596);
+
+     // test step 5 - overflow after gcd
+       tester.test_md(438241312999, 3681227029158+222121, 876482625990, 1840613625656);
+    }
 }

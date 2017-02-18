@@ -5,11 +5,11 @@ Author: Piotr Likus
 
 Created: 03/01/2011
 
-Modified: 17/01/2017
+Modified: 18/02/2017
 
 Licence: BSD
 
-Version: 1.14
+Version: 1.15
 
 This data type is designed to perform calculation with on-fly  roundings
 &  to  support  correct  compare  function  (floating-point  compare  is
@@ -73,6 +73,24 @@ value = decimal_cast<2>(decimal_cast<6>(value) * exchangeRate);
 cout << "Value #5 is: " << value << endl;
 ```
 
+# Supported rounding modes:
+
+* def_round_policy: default rounding (arithmetic)
+* null_round_policy: round towards zero = truncate
+* half_down_round_policy: round half towards negative infinity
+* half_up_round_policy: round half towards positive infinity
+* half_even_round_policy: bankers' rounding, convergent rounding, statistician's rounding, Dutch rounding, Gaussian rounding
+* ceiling_round_policy: round towards positive infinity
+* floor_round_policy: round towards negative infinity
+* round_down_round_policy: round towards zero = truncate
+* round_up_round_policy: round away from zero
+
+In order to use one of these rounding modes you need to declare your decimal variable like this:
+
+    dec::decimal<2, half_even_round_policy> a;
+    
+and it will perform required rounding autimatically - for example during assignment or arithmetic operations.    
+
 # Other information
 For more examples please see \test directory.
 
@@ -94,3 +112,9 @@ Tested compilers:
 
 Uses C++11 by default, define DEC_NO_CPP11 symbol if your compiler does not support this standard.
 To use custom namespace, define DEC_NAMESPACE symbol which should contain your target namespace for decimal type.
+
+For list of project contributors, currently open issues or latest version see project site:
+https://github.com/vpiotr/decimal_for_cpp
+
+
+  
