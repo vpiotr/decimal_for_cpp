@@ -89,7 +89,7 @@ In order to use one of these rounding modes you need to declare your decimal var
 
     dec::decimal<2, half_even_round_policy> a;
     
-and it will perform required rounding autimatically - for example during assignment or arithmetic operations.    
+and it will perform required rounding automatically - for example during assignment or arithmetic operations.    
 
 # Other information
 For more examples please see \test directory.
@@ -117,4 +117,3 @@ For list of project contributors, currently open issues or latest version see pr
 https://github.com/vpiotr/decimal_for_cpp
 
 
-  
