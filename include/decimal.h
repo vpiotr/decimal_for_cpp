@@ -211,16 +211,6 @@ private:
         return b;
     }
 
-    // count number of bits required to store given value
-    static int bitcnt(int64 value) {
-        int res = 0;
-        while (value != 0) {
-            value = value >> 1;
-            ++res;
-        }
-        return res;
-    }
-
 public:
     // result = (value1 * value2) / divisor
     inline static int64 multDiv(const int64 value1, const int64 value2,
