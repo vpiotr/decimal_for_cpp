@@ -185,32 +185,6 @@ inline bool div_rounded(int64 &output, int64 a, int64 b) {
 
 template<class RoundPolicy>
 class dec_utils {
-private:
-    int64 pow10(int n) {
-        static const int64 decimalFactorTable[] = { 1, 10, 100, 1000, 10000,
-                100000, 1000000, 10000000, 100000000, 1000000000, 10000000000,
-                100000000000, 1000000000000, 10000000000000, 100000000000000,
-                1000000000000000, 10000000000000000, 100000000000000000,
-                1000000000000000000 };
-
-        if (n >= 0 && n <= max_decimal_points) {
-            return decimalFactorTable[n];
-        } else {
-            return 0;
-        }
-    }
-
-    // calculate greatest common divisor
-    static int64 gcd(int64 a, int64 b) {
-        int64 c;
-        while (a != 0) {
-            c = a;
-            a = b % a;
-            b = c;
-        }
-        return b;
-    }
-
 public:
     // result = (value1 * value2) / divisor
     inline static int64 multDiv(const int64 value1, const int64 value2,
@@ -265,6 +239,32 @@ public:
                         * static_cast<cross_float>(value2dec)
                         / static_cast<cross_float>(divisor));
         return result;
+    }
+
+    static int64 pow10(int n) {
+        static const int64 decimalFactorTable[] = { 1, 10, 100, 1000, 10000,
+                100000, 1000000, 10000000, 100000000, 1000000000, 10000000000,
+                100000000000, 1000000000000, 10000000000000, 100000000000000,
+                1000000000000000, 10000000000000000, 100000000000000000,
+                1000000000000000000 };
+
+        if (n >= 0 && n <= max_decimal_points) {
+            return decimalFactorTable[n];
+        } else {
+            return 0;
+        }
+    }
+
+private:
+    // calculate greatest common divisor
+    static int64 gcd(int64 a, int64 b) {
+        int64 c;
+        while (a != 0) {
+            c = a;
+            a = b % a;
+            b = c;
+        }
+        return b;
     }
 
 };
@@ -999,13 +999,13 @@ public:
             int64 newValue;
 
             if (!RoundPolicy::div_rounded(newValue, mantissa,
-                    pow10(-exponentForPack))) {
+                    dec_utils<RoundPolicy>::pow10(-exponentForPack))) {
                 newValue = 0;
             }
 
             m_value = newValue;
         } else {
-            m_value = mantissa * pow10(exponentForPack);
+            m_value = mantissa * dec_utils<RoundPolicy>::pow10(exponentForPack);
         }
     }
 
