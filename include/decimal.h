@@ -40,6 +40,7 @@
 #include <iomanip>
 #include <sstream>
 #include <locale>
+#include <limits>
 
 // --> include headers for limits and int64_t
 
