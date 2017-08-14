@@ -1013,10 +1013,12 @@ public:
         int64 value = m_value;
         int exp = -Prec;
 
-        // normalize
-        while (value % 10 == 0) {
-            value /= 10;
-            exp++;
+        if (value != 0) {
+            // normalize
+            while (value % 10 == 0) {
+                value /= 10;
+                exp++;
+            }
         }
 
         mantissa = value;
