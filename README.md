@@ -5,11 +5,11 @@ Author: Piotr Likus
 
 Created: 03/01/2011
 
-Modified: 18/02/2017
+Modified: 23/09/2018
 
 Licence: BSD
 
-Version: 1.15
+Version: 1.16
 
 This data type is designed to perform calculation with on-fly  roundings
 &  to  support  correct  compare  function  (floating-point  compare  is
@@ -71,6 +71,16 @@ value = decimal_cast<2>(decimal_cast<6>(value) * exchangeRate);
 
 // displays: Value #5 is: 17.34
 cout << "Value #5 is: " << value << endl;
+
+// supports optional strong typing, e.g.
+// depending on configuration mixing precision can be forbidden 
+// or handled automatically
+decimal<2> d2("12.03");
+decimal<4> d4("123.0103");
+
+d2 += d4; // this will fail to compile if you define DEC_TYPE_LEVEL == 0
+d4 += d2; // this will compile 
+
 ```
 
 # Supported rounding modes:
@@ -112,6 +122,7 @@ Tested compilers:
 
 Uses C++11 by default, define DEC_NO_CPP11 symbol if your compiler does not support this standard.
 To use custom namespace, define DEC_NAMESPACE symbol which should contain your target namespace for decimal type.
+For full list of configuration options see "Config section" in decimal.h file.
 
 For list of project contributors, currently open issues or latest version see project site:
 https://github.com/vpiotr/decimal_for_cpp

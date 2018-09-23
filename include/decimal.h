@@ -4,8 +4,8 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 18/02/2017
-// Version:     1.15
+// Last change: 23/09/2018
+// Version:     1.16
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
@@ -35,11 +35,16 @@
 // - define DEC_CROSS_DOUBLE if you want to use double (instead of xdouble) for cross-conversions
 // - define DEC_EXTERNAL_LIMITS to define by yourself DEC_MAX_INT32
 // - define DEC_NO_CPP11 if your compiler does not support C++11
+// - define DEC_TYPE_LEVEL as 0 for strong typing, as 1 for rounding when different precision is mixed
 
 #include <iosfwd>
 #include <iomanip>
 #include <sstream>
 #include <locale>
+
+#ifndef DEC_TYPE_LEVEL
+#define DEC_TYPE_LEVEL 1
+#endif
 
 // --> include headers for limits and int64_t
 
@@ -143,6 +148,18 @@ template<> struct DecimalFactor<0> {
 
 template<> struct DecimalFactor<1> {
     static const int64 value = 10;
+};
+
+template<int Prec, bool positive> struct DecimalFactorDiff_impl {
+    static const int64 value = DecimalFactor<Prec>::value;
+};
+
+template<int Prec> struct DecimalFactorDiff_impl<Prec, false> {
+    static const int64 value = INT64_MIN;
+};
+
+template<int Prec> struct DecimalFactorDiff {
+    static const int64 value = DecimalFactorDiff_impl<Prec, Prec >= 0>::value;
 };
 
 #ifndef DEC_EXTERNAL_ROUND
@@ -619,18 +636,26 @@ public:
         return *this;
     }
 
+#if DEC_TYPE_LEVEL == 0
+    template<int Prec2>
+    typename std::enable_if<Prec >= Prec2, decimal>::type
+    & operator=(const decimal<Prec2> &rhs) {
+        m_value = rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
+        return *this;
+    }
+#else
     template<int Prec2>
     decimal & operator=(const decimal<Prec2> &rhs) {
         if (Prec2 > Prec) {
-            static_assert(Prec2 > Prec, "Invalid path");
-            RoundPolicy::div_rounded(m_value, rhs.m_value,
-                    DecimalFactor<Prec2 - Prec>::value);
+            RoundPolicy::div_rounded(m_value, rhs.getUnbiased(),
+                    DecimalFactorDiff<Prec2 - Prec>::value);
         } else {
-            static_assert((Prec2 <= Prec), "Invalid path");
-            m_value = rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+            m_value = rhs.getUnbiased()
+                    * DecimalFactorDiff<Prec - Prec2>::value;
         }
         return *this;
     }
+#endif
 
     decimal & operator=(int64 rhs) {
         m_value = DecimalFactor<Prec>::value * rhs;
@@ -678,43 +703,60 @@ public:
         return result;
     }
 
+#if DEC_TYPE_LEVEL == 0
+    template<int Prec2>
+    const typename std::enable_if<Prec >= Prec2, decimal>::type
+    operator+(const decimal<Prec2> &rhs) const {
+        decimal result = *this;
+        result.m_value += rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
+        return result;
+    }
+#else
     template<int Prec2>
     const decimal operator+(const decimal<Prec2> &rhs) const {
         decimal result = *this;
         if (Prec2 > Prec) {
             int64 val;
-            static_assert((Prec2 > Prec), "Invalid path");
-            RoundPolicy::div_rounded(val, rhs.m_value,
-                    DecimalFactor<Prec2 - Prec>::value);
+            RoundPolicy::div_rounded(val, rhs.getUnbiased(),
+                    DecimalFactorDiff<Prec2 - Prec>::value);
             result.m_value += val;
         } else {
-            static_assert((Prec2 <= Prec), "Invalid path");
-            result.m_value += rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+            result.m_value += rhs.getUnbiased()
+                    * DecimalFactorDiff<Prec - Prec2>::value;
         }
 
         return result;
     }
+#endif
 
     decimal & operator+=(const decimal &rhs) {
         m_value += rhs.m_value;
         return *this;
     }
 
+#if DEC_TYPE_LEVEL == 0
+    template<int Prec2>
+    typename std::enable_if<Prec >= Prec2, decimal>::type
+    & operator+=(const decimal<Prec2> &rhs) {
+        m_value += rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
+        return *this;
+    }
+#else
     template<int Prec2>
     decimal & operator+=(const decimal<Prec2> &rhs) {
         if (Prec2 > Prec) {
             int64 val;
-            static_assert((Prec2 > Prec), "Invalid path");
-            RoundPolicy::div_rounded(val, rhs.m_value,
-                    DecimalFactor<Prec2 - Prec>::value);
+            RoundPolicy::div_rounded(val, rhs.getUnbiased(),
+                    DecimalFactorDiff<Prec2 - Prec>::value);
             m_value += val;
         } else {
-            static_assert((Prec2 <= Prec), "Invalid path");
-            m_value += rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+            m_value += rhs.getUnbiased()
+                    * DecimalFactorDiff<Prec - Prec2>::value;
         }
 
         return *this;
     }
+#endif
 
     const decimal operator+() const {
         return *this;
@@ -732,43 +774,60 @@ public:
         return result;
     }
 
+#if DEC_TYPE_LEVEL == 0
+    template<int Prec2>
+    const typename std::enable_if<Prec >= Prec2, decimal>::type
+    operator-(const decimal<Prec2> &rhs) const {
+        decimal result = *this;
+        result.m_value -= rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
+        return result;
+    }
+#else
     template<int Prec2>
     const decimal operator-(const decimal<Prec2> &rhs) const {
         decimal result = *this;
         if (Prec2 > Prec) {
             int64 val;
-            static_assert((Prec2 > Prec), "Invalid path");
-            RoundPolicy::div_rounded(val, rhs.m_value,
-                    DecimalFactor<Prec2 - Prec>::value);
+            RoundPolicy::div_rounded(val, rhs.getUnbiased(),
+                    DecimalFactorDiff<Prec2 - Prec>::value);
             result.m_value -= val;
         } else {
-            static_assert((Prec2 <= Prec), "Invalid path");
-            result.m_value -= rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+            result.m_value -= rhs.getUnbiased()
+                    * DecimalFactorDiff<Prec - Prec2>::value;
         }
 
         return result;
     }
+#endif
 
     decimal & operator-=(const decimal &rhs) {
         m_value -= rhs.m_value;
         return *this;
     }
 
+#if DEC_TYPE_LEVEL == 0
+    template<int Prec2>
+    typename std::enable_if<Prec >= Prec2, decimal>::type
+    & operator-=(const decimal<Prec2> &rhs) {
+        m_value -= rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
+        return *this;
+    }
+#else
     template<int Prec2>
     decimal & operator-=(const decimal<Prec2> &rhs) {
         if (Prec2 > Prec) {
             int64 val;
-            static_assert((Prec2 > Prec), "Invalid path");
-            RoundPolicy::div_rounded(val, rhs.m_value,
-                    DecimalFactor<Prec2 - Prec>::value);
+            RoundPolicy::div_rounded(val, rhs.getUnbiased(),
+                    DecimalFactorDiff<Prec2 - Prec>::value);
             m_value -= val;
         } else {
-            static_assert((Prec2 <= Prec), "Invalid path");
-            m_value -= rhs.m_value * DecimalFactor<Prec - Prec2>::value;
+            m_value -= rhs.getUnbiased()
+                    * DecimalFactorDiff<Prec - Prec2>::value;
         }
 
         return *this;
     }
+#endif
 
     const decimal operator*(int rhs) const {
         decimal result = *this;
@@ -789,6 +848,16 @@ public:
         return result;
     }
 
+#if DEC_TYPE_LEVEL == 0
+    template<int Prec2>
+    const typename std::enable_if<Prec >= Prec2, decimal>::type
+    operator*(const decimal<Prec2>& rhs) const {
+        decimal result = *this;
+        result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
+                rhs.getUnbiased(), DecimalFactor<Prec2>::value);
+        return result;
+    }
+#else
     template<int Prec2>
     const decimal operator*(const decimal<Prec2>& rhs) const {
         decimal result = *this;
@@ -796,6 +865,7 @@ public:
                 rhs.getUnbiased(), DecimalFactor<Prec2>::value);
         return result;
     }
+#endif
 
     decimal & operator*=(int rhs) {
         m_value *= rhs;
@@ -813,12 +883,22 @@ public:
         return *this;
     }
 
+#if DEC_TYPE_LEVEL == 0
     template<int Prec2>
-    decimal & operator*=(const decimal<Prec2>& rhs) {
-        m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.m_value,
+    typename std::enable_if<Prec >= Prec2, decimal>::type
+    & operator*=(const decimal<Prec2>& rhs) {
+        m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.getUnbiased(),
                 DecimalFactor<Prec2>::value);
         return *this;
     }
+#else
+    template<int Prec2>
+    decimal & operator*=(const decimal<Prec2>& rhs) {
+        m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.getUnbiased(),
+                DecimalFactor<Prec2>::value);
+        return *this;
+    }
+#endif
 
     const decimal operator/(int rhs) const {
         decimal result = *this;
@@ -851,6 +931,16 @@ public:
         return result;
     }
 
+#if DEC_TYPE_LEVEL == 0
+    template<int Prec2>
+    const typename std::enable_if<Prec >= Prec2, decimal>::type
+    operator/(const decimal<Prec2>& rhs) const {
+        decimal result = *this;
+        result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
+                DecimalFactor<Prec2>::value, rhs.getUnbiased());
+        return result;
+    }
+#else
     template<int Prec2>
     const decimal operator/(const decimal<Prec2>& rhs) const {
         decimal result = *this;
@@ -858,6 +948,7 @@ public:
                 DecimalFactor<Prec2>::value, rhs.getUnbiased());
         return result;
     }
+#endif
 
     decimal & operator/=(int rhs) {
         if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
@@ -891,13 +982,24 @@ public:
         return (m_value > 0) ? 1 : ((m_value < 0) ? -1 : 0);
     }
 
+#if DEC_TYPE_LEVEL == 0
     template<int Prec2>
-    decimal & operator/=(const decimal<Prec2> &rhs) {
+    typename std::enable_if<Prec >= Prec2, decimal>::type
+    & operator/=(const decimal<Prec2> &rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value,
-                DecimalFactor<Prec2>::value, rhs.m_value);
+                DecimalFactor<Prec2>::value, rhs.getUnbiased());
 
         return *this;
     }
+#else
+    template<int Prec2>
+    decimal & operator/=(const decimal<Prec2> &rhs) {
+        m_value = dec_utils<RoundPolicy>::multDiv(m_value,
+                DecimalFactor<Prec2>::value, rhs.getUnbiased());
+
+        return *this;
+    }
+#endif
 
     double getAsDouble() const {
         return static_cast<double>(m_value) / getPrecFactorDouble();
