@@ -78,8 +78,8 @@ cout << "Value #5 is: " << value << endl;
 decimal<2> d2("12.03");
 decimal<4> d4("123.0103");
 
-d2 += d4; // this will fail to compile if you define DEC_TYPE_LEVEL == 0
-d4 += d2; // this will compile 
+d2 += d4; // this will fail to compile if you define DEC_TYPE_LEVEL < 2
+d4 += d2; // this will fail to compile if you define DEC_TYPE_LEVEL == 0 
 
 ```
 

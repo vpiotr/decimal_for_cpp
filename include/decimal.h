@@ -35,7 +35,9 @@
 // - define DEC_CROSS_DOUBLE if you want to use double (instead of xdouble) for cross-conversions
 // - define DEC_EXTERNAL_LIMITS to define by yourself DEC_MAX_INT32
 // - define DEC_NO_CPP11 if your compiler does not support C++11
-// - define DEC_TYPE_LEVEL as 0 for strong typing, as 1 for rounding when different precision is mixed
+// - define DEC_TYPE_LEVEL as 0 for strong typing (same precision required for both arguments),
+//   as 1 for allowing to mix lower or equal precision types
+//   as 2 for automatic rounding when different precision is mixed
 
 #include <iosfwd>
 #include <iomanip>
@@ -43,7 +45,7 @@
 #include <locale>
 
 #ifndef DEC_TYPE_LEVEL
-#define DEC_TYPE_LEVEL 1
+#define DEC_TYPE_LEVEL 2
 #endif
 
 // --> include headers for limits and int64_t
@@ -636,14 +638,14 @@ public:
         return *this;
     }
 
-#if DEC_TYPE_LEVEL == 0
+#if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     typename std::enable_if<Prec >= Prec2, decimal>::type
     & operator=(const decimal<Prec2> &rhs) {
         m_value = rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return *this;
     }
-#else
+#elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
     decimal & operator=(const decimal<Prec2> &rhs) {
         if (Prec2 > Prec) {
@@ -703,15 +705,15 @@ public:
         return result;
     }
 
-#if DEC_TYPE_LEVEL == 0
-    template<int Prec2>
+#if DEC_TYPE_LEVEL == 1
+template<int Prec2>
     const typename std::enable_if<Prec >= Prec2, decimal>::type
     operator+(const decimal<Prec2> &rhs) const {
         decimal result = *this;
         result.m_value += rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return result;
     }
-#else
+#elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
     const decimal operator+(const decimal<Prec2> &rhs) const {
         decimal result = *this;
@@ -734,14 +736,14 @@ public:
         return *this;
     }
 
-#if DEC_TYPE_LEVEL == 0
+#if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     typename std::enable_if<Prec >= Prec2, decimal>::type
     & operator+=(const decimal<Prec2> &rhs) {
         m_value += rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return *this;
     }
-#else
+#elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
     decimal & operator+=(const decimal<Prec2> &rhs) {
         if (Prec2 > Prec) {
@@ -774,7 +776,7 @@ public:
         return result;
     }
 
-#if DEC_TYPE_LEVEL == 0
+#if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     const typename std::enable_if<Prec >= Prec2, decimal>::type
     operator-(const decimal<Prec2> &rhs) const {
@@ -782,7 +784,7 @@ public:
         result.m_value -= rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return result;
     }
-#else
+#elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
     const decimal operator-(const decimal<Prec2> &rhs) const {
         decimal result = *this;
@@ -805,14 +807,14 @@ public:
         return *this;
     }
 
-#if DEC_TYPE_LEVEL == 0
+#if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     typename std::enable_if<Prec >= Prec2, decimal>::type
     & operator-=(const decimal<Prec2> &rhs) {
         m_value -= rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return *this;
     }
-#else
+#elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
     decimal & operator-=(const decimal<Prec2> &rhs) {
         if (Prec2 > Prec) {
@@ -848,7 +850,7 @@ public:
         return result;
     }
 
-#if DEC_TYPE_LEVEL == 0
+#if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     const typename std::enable_if<Prec >= Prec2, decimal>::type
     operator*(const decimal<Prec2>& rhs) const {
@@ -857,7 +859,7 @@ public:
                 rhs.getUnbiased(), DecimalFactor<Prec2>::value);
         return result;
     }
-#else
+#elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
     const decimal operator*(const decimal<Prec2>& rhs) const {
         decimal result = *this;
@@ -883,7 +885,7 @@ public:
         return *this;
     }
 
-#if DEC_TYPE_LEVEL == 0
+#if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     typename std::enable_if<Prec >= Prec2, decimal>::type
     & operator*=(const decimal<Prec2>& rhs) {
@@ -891,7 +893,7 @@ public:
                 DecimalFactor<Prec2>::value);
         return *this;
     }
-#else
+#elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
     decimal & operator*=(const decimal<Prec2>& rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.getUnbiased(),
@@ -931,7 +933,7 @@ public:
         return result;
     }
 
-#if DEC_TYPE_LEVEL == 0
+#if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     const typename std::enable_if<Prec >= Prec2, decimal>::type
     operator/(const decimal<Prec2>& rhs) const {
@@ -940,7 +942,7 @@ public:
                 DecimalFactor<Prec2>::value, rhs.getUnbiased());
         return result;
     }
-#else
+#elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
     const decimal operator/(const decimal<Prec2>& rhs) const {
         decimal result = *this;
@@ -982,7 +984,7 @@ public:
         return (m_value > 0) ? 1 : ((m_value < 0) ? -1 : 0);
     }
 
-#if DEC_TYPE_LEVEL == 0
+#if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     typename std::enable_if<Prec >= Prec2, decimal>::type
     & operator/=(const decimal<Prec2> &rhs) {
@@ -991,7 +993,7 @@ public:
 
         return *this;
     }
-#else
+#elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
     decimal & operator/=(const decimal<Prec2> &rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value,
