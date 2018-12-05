@@ -220,8 +220,8 @@ public:
             return result;
         }
 
-        int64 resDecPart = value1dec * value2dec;
-        if (resDecPart / value1dec == value2dec) { // no overflow
+        if (!isMultOverflow(value1dec, value2dec)) { // no overflow
+            int64 resDecPart = value1dec * value2dec;
             if (!RoundPolicy::div_rounded(resDecPart, resDecPart, divisor))
                 resDecPart = 0;
             result += resDecPart;
@@ -244,8 +244,8 @@ public:
             }
         }
 
-        resDecPart = value1dec * value2dec;
-        if (resDecPart / value1dec == value2dec) { // no overflow
+        if (!isMultOverflow(value1dec, value2dec)) { // no overflow
+            int64 resDecPart = value1dec * value2dec;
             if (RoundPolicy::div_rounded(resDecPart, resDecPart, divisor)) {
                 result += resDecPart;
                 return result;
@@ -258,6 +258,35 @@ public:
                         * static_cast<cross_float>(value2dec)
                         / static_cast<cross_float>(divisor));
         return result;
+    }
+
+    static bool isMultOverflow(const int64 value1, const int64 value2) {
+       if (value1 == 0 || value2 == 0) {
+           return false;
+       }
+
+       if ((value1 < 0) != (value2 < 0)) { // different sign
+           if (value1 == DEC_MIN_INT64) {
+               return value2 > 1;
+           } else if (value2 == DEC_MIN_INT64) {
+               return value1 > 1;
+           }
+           if (value1 < 0) {
+               return isMultOverflow(-value1, value2);
+           }
+           if (value2 < 0) {
+               return isMultOverflow(value1, -value2);
+           }
+       } else if (value1 < 0 && value2 < 0) {
+           if (value1 == DEC_MIN_INT64) {
+               return value2 < -1;
+           } else if (value2 == DEC_MIN_INT64) {
+               return value1 < -1;
+           }
+           return isMultOverflow(-value1, -value2);
+       }
+
+       return (value1 > DEC_MAX_INT64 / value2);
     }
 
     static int64 pow10(int n) {
