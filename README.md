@@ -55,8 +55,13 @@ value /= 1000;
 cout << "Value #3 is: " << value << endl;
 
 // integer multiplication and division can be used directly in expression
+// when integer is on right side
 // displays: Value: 143.13 * 2 is: 286.26
 cout << "Value: " << value << " * 2 is: " << (value * 2) << endl;
+
+// to use integer on left side you need to cast it
+// displays: Value: 2 * 143.13 is: 286.26
+cout << "Value: 2 * " << value << " is: " << (decimal_cast<2>(2) * value) << endl;
 
 // to use non-integer constants in expressions you need to use decimal_cast
 value = value * decimal_cast<2>("3.33") / decimal_cast<2>(333.0);
@@ -73,13 +78,32 @@ value = decimal_cast<2>(decimal_cast<6>(value) * exchangeRate);
 cout << "Value #5 is: " << value << endl;
 
 // supports optional strong typing, e.g.
-// depending on configuration mixing precision can be forbidden 
+// depending on configuration mixing precision can be forbidden
 // or handled automatically
 decimal<2> d2("12.03");
 decimal<4> d4("123.0103");
 
-d2 += d4; // this will fail to compile if you define DEC_TYPE_LEVEL < 2
-d4 += d2; // this will fail to compile if you define DEC_TYPE_LEVEL == 0 
+// compiles always
+d2 += d2;
+d2 += decimal_cast<2>(d4);
+d4 += decimal_cast<4>(d2);
+
+#if DEC_TYPE_LEVEL >= 2
+// potential precision loss
+// this will fail to compile if you define DEC_TYPE_LEVEL = 0 or 1
+d2 += d4;
+#endif
+
+#if DEC_TYPE_LEVEL >= 1
+// (possibly unintentional) mixed precision without type casting
+// this will fail to compile if you define DEC_TYPE_LEVEL = 0
+d4 += d2;
+#endif
+
+// for default setup displays: mixed d2 = 417.15
+cout << "mixed d2 = " << d2 << endl;
+// for default setup displays: mixed d4 = 687.2303
+cout << "mixed d4 = " << d4 << endl;
 
 ```
 
