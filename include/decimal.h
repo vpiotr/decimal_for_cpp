@@ -303,6 +303,11 @@ public:
         }
     }
 
+    template<class T>
+    static int64 trunc(T value) {
+        return static_cast<int64>(value);
+    }
+
 private:
     // calculate greatest common divisor
     static int64 gcd(int64 a, int64 b) {
@@ -1162,6 +1167,7 @@ protected:
     inline xdouble getPrecFactorXDouble() const {
         return static_cast<xdouble>(DecimalFactor<Prec>::value);
     }
+
     inline double getPrecFactorDouble() const {
         return static_cast<double>(DecimalFactor<Prec>::value);
     }
@@ -1169,29 +1175,43 @@ protected:
     void init(const decimal &src) {
         m_value = src.m_value;
     }
+
     void init(uint value) {
         m_value = DecimalFactor<Prec>::value * value;
     }
+
     void init(int value) {
         m_value = DecimalFactor<Prec>::value * value;
     }
+
     void init(int64 value) {
         m_value = DecimalFactor<Prec>::value * value;
     }
+
     void init(xdouble value) {
+        dec_storage_t intPart = dec_utils<RoundPolicy>::trunc(value);
+        xdouble fracPart = value - intPart;
         m_value = RoundPolicy::round(
-                static_cast<xdouble>(DecimalFactor<Prec>::value) * value);
+                static_cast<xdouble>(DecimalFactor<Prec>::value) * fracPart) +
+                DecimalFactor<Prec>::value * intPart;
     }
+
     void init(double value) {
+        dec_storage_t intPart = dec_utils<RoundPolicy>::trunc(value);
+        double fracPart = value - intPart;
         m_value = RoundPolicy::round(
-                static_cast<double>(DecimalFactor<Prec>::value) * value);
+                static_cast<double>(DecimalFactor<Prec>::value) * fracPart) +
+                DecimalFactor<Prec>::value * intPart;
     }
 
     void init(float value) {
+        dec_storage_t intPart = dec_utils<RoundPolicy>::trunc(value);
+        double fracPart = value - intPart;
         m_value = RoundPolicy::round(
-                static_cast<double>(DecimalFactor<Prec>::value)
-                        * static_cast<double>(value));
+                static_cast<double>(DecimalFactor<Prec>::value) * fracPart) +
+                DecimalFactor<Prec>::value * intPart;
     }
+
     void initWithPrec(int64 value, int64 precFactor) {
         int64 ownFactor = DecimalFactor<Prec>::value;
 

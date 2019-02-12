@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE(decimalRounding)
                 balance = dec::decimal2(3.156);
                 BOOST_CHECK(balance == dec::decimal2(3.16));
 
-                balance = dec::decimal2(3.155);
+                balance = dec::decimal2("3.155");
                 BOOST_CHECK(balance == dec::decimal2(3.16));
 
                 balance = dec::decimal2(3.154);
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(decimalRounding)
                 balance = dec::decimal2(-3.156);
                 BOOST_CHECK(balance == dec::decimal2(-3.16));
 
-                balance = dec::decimal2(-3.155);
+                balance = dec::decimal2("-3.155");
                 BOOST_CHECK(balance == dec::decimal2(-3.16));
 
                 balance = dec::decimal2(-3.154);
@@ -1095,3 +1095,12 @@ BOOST_AUTO_TEST_CASE(decimalTypeLevel)
 #endif
 }
 
+BOOST_AUTO_TEST_CASE(decimalFloatConstructorHighPrec) {
+    dec::decimal<2> d1(3.1549999999999998);
+    dec::decimal<2> d2("3.1549999999999998");
+    BOOST_CHECK_EQUAL( d1, d2);
+
+    dec::decimal<2> d3(-3.1549999999999998);
+    dec::decimal<2> d4("-3.1549999999999998");
+    BOOST_CHECK_EQUAL( d3, d4);
+}
