@@ -704,8 +704,12 @@ public:
     }
 
     decimal & operator=(double rhs) {
-        m_value = RoundPolicy::round(
-                static_cast<double>(DecimalFactor<Prec>::value) * rhs);
+        m_value = fpToStorage(rhs);
+        return *this;
+    }
+
+    decimal & operator=(xdouble rhs) {
+        m_value = fpToStorage(rhs);
         return *this;
     }
 
@@ -1042,8 +1046,7 @@ template<int Prec2>
     }
 
     void setAsDouble(double value) {
-        double nval = value * getPrecFactorDouble();
-        m_value = RoundPolicy::round(nval);
+        m_value = fpToStorage(value);
     }
 
     xdouble getAsXDouble() const {
@@ -1051,8 +1054,7 @@ template<int Prec2>
     }
 
     void setAsXDouble(xdouble value) {
-        xdouble nval = value * getPrecFactorXDouble();
-        m_value = RoundPolicy::round(nval);
+        m_value = fpToStorage(value);
     }
 
     // returns integer value = real_value * (10 ^ precision)
@@ -1189,27 +1191,15 @@ protected:
     }
 
     void init(xdouble value) {
-        dec_storage_t intPart = dec_utils<RoundPolicy>::trunc(value);
-        xdouble fracPart = value - intPart;
-        m_value = RoundPolicy::round(
-                static_cast<xdouble>(DecimalFactor<Prec>::value) * fracPart) +
-                DecimalFactor<Prec>::value * intPart;
+        m_value = fpToStorage(value);
     }
 
     void init(double value) {
-        dec_storage_t intPart = dec_utils<RoundPolicy>::trunc(value);
-        double fracPart = value - intPart;
-        m_value = RoundPolicy::round(
-                static_cast<double>(DecimalFactor<Prec>::value) * fracPart) +
-                DecimalFactor<Prec>::value * intPart;
+        m_value = fpToStorage(value);
     }
 
     void init(float value) {
-        dec_storage_t intPart = dec_utils<RoundPolicy>::trunc(value);
-        double fracPart = value - intPart;
-        m_value = RoundPolicy::round(
-                static_cast<double>(DecimalFactor<Prec>::value) * fracPart) +
-                DecimalFactor<Prec>::value * intPart;
+        m_value = fpToStorage(static_cast<double>(value));
     }
 
     void initWithPrec(int64 value, int64 precFactor) {
@@ -1225,6 +1215,15 @@ protected:
                             * (static_cast<cross_float>(ownFactor)
                                     / static_cast<cross_float>(precFactor)));
         }
+    }
+
+    template<typename T>
+    static dec_storage_t fpToStorage(T value) {
+        dec_storage_t intPart = dec_utils<RoundPolicy>::trunc(value);
+        T fracPart = value - intPart;
+        return RoundPolicy::round(
+                static_cast<T>(DecimalFactor<Prec>::value) * fracPart) +
+                  DecimalFactor<Prec>::value * intPart;
     }
 
     template<typename T>
