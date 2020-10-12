@@ -228,7 +228,7 @@ public:
             return result;
         }
 
-        // minimalize value1 & divisor
+        // minimize value1 & divisor
         {
             int64 c = gcd(value1dec, divisor);
             if (c != 1) {
@@ -236,7 +236,7 @@ public:
                 divisor /= c;
             }
 
-            // minimalize value2 & divisor
+            // minimize value2 & divisor
             c = gcd(value2dec, divisor);
             if (c != 1) {
                 value2dec /= c;
