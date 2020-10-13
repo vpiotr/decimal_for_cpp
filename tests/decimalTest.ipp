@@ -1112,3 +1112,65 @@ BOOST_AUTO_TEST_CASE(decimalFloatConstructorHighPrec) {
     d6 = 3.1549999999999998;
     BOOST_CHECK_EQUAL(d6, d2);
 }
+
+BOOST_AUTO_TEST_CASE(decimalToString) {
+
+    std::string expected1 = "3.1549999999999998";
+    dec::decimal<16> d1(expected1);
+
+    BOOST_CHECK_EQUAL(dec::toString(d1), expected1);
+
+    std::string expected2 = "315499999999999.98";
+    dec::decimal<2> d2(expected2);
+
+    BOOST_CHECK_EQUAL(dec::toString(d2), expected2);
+}
+
+BOOST_AUTO_TEST_CASE(decimalFromString) {
+
+    std::string value1 = "3.1549999999999998";
+    dec::decimal<16> d1a (3.1549999999999998);
+    dec::decimal<16> d1b(value1);
+
+    BOOST_CHECK_EQUAL(d1a, d1b);
+
+    std::string value2 = "31549999999999.98";
+    dec::decimal<2> d2a  (31549999999999.98);
+    dec::decimal<2> d2b(value2);
+
+    BOOST_CHECK_EQUAL(d2a, d2b);
+}
+
+BOOST_AUTO_TEST_CASE(decimalToStringWithFormat) {
+
+    dec::decimal_format format(',', '.');
+
+    std::string value1    = "3.1549999999999998";
+    std::string expected1 = "3,1549999999999998";
+    dec::decimal<16> d1(value1);
+
+    BOOST_CHECK_EQUAL(dec::toString(d1, format), expected1);
+
+    std::string value2    = "315499999999999.98";
+    std::string expected2 = "315.499.999.999.999,98";
+    dec::decimal<2> d2(value2);
+
+    BOOST_CHECK_EQUAL(dec::toString(d2, format), expected2);
+}
+
+BOOST_AUTO_TEST_CASE(decimalFromStringWithFormat) {
+
+    dec::decimal_format format(',', '.');
+
+    std::string value1 = "3,1549999999999998";
+    dec::decimal<16> d1a (3.1549999999999998);
+    dec::decimal<16> d1b(dec::fromString<dec::decimal<16>>(value1, format));
+
+    BOOST_CHECK_EQUAL(d1a, d1b);
+
+    std::string value2 = "31.549.999.999.999,98";
+    dec::decimal<2> d2a  (31549999999999.98);
+    dec::decimal<2> d2b(dec::fromString<dec::decimal<2>>(value2, format));
+
+    BOOST_CHECK_EQUAL(d2a, d2b);
+}

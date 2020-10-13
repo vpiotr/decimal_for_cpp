@@ -1327,161 +1327,295 @@ decimal<Prec, RoundPolicy> decimal_cast(const char (&arg)[N]) {
     return result;
 }
 
-/// Exports decimal to stream
-/// Used format: {-}bbbb.aaaa where
-/// {-} is optional '-' sign character
-/// '.' is locale-dependent decimal point character
-/// bbbb is stream of digits before decimal point
-/// aaaa is stream of digits after decimal point
-template<class decimal_type, typename StreamType>
-void toStream(const decimal_type &arg, StreamType &output) {
-    using namespace std;
+    // value format with constant default values
+    class basic_decimal_format {
+    public:
+        virtual bool change_thousands_if_needed() const { return true; }
 
-    int64 before, after;
-    int sign;
+        virtual char decimal_point() const {
+            return '.';
+        }
 
-    arg.unpack(before, after);
-    sign = 1;
+        virtual char thousands_sep() const {
+            return ',';
+        }
 
-    if (before < 0) {
-        sign = -1;
-        before = -before;
-    }
+        virtual bool thousands_grouping() const {
+            return false;
+        }
 
-    if (after < 0) {
-        sign = -1;
-        after = -after;
-    }
-
-    if (sign < 0)
-        output << "-";
-
-    const char dec_point =
-            use_facet<numpunct<char> >(output.getloc()).decimal_point();
-    output << before;
-    if (arg.getDecimalPoints() > 0) {
-        output << dec_point;
-        output << setw(arg.getDecimalPoints()) << setfill('0') << right
-                << after;
-    }
-}
-
-namespace details {
-
-/// Extract values from stream ready to be packed to decimal
-template<typename StreamType>
-bool parse_unpacked(StreamType &input, int &sign, int64 &before, int64 &after,
-        int &decimalDigits) {
-    using namespace std;
-
-    enum StateEnum {
-        IN_SIGN, IN_BEFORE_FIRST_DIG, IN_BEFORE_DEC, IN_AFTER_DEC, IN_END
-    } state = IN_SIGN;
-    const numpunct<char> *facet =
-            has_facet<numpunct<char> >(input.getloc()) ?
-                    &use_facet<numpunct<char> >(input.getloc()) : NULL;
-    const char dec_point = (facet != NULL) ? facet->decimal_point() : '.';
-    const bool thousands_grouping =
-            (facet != NULL) ? (!facet->grouping().empty()) : false;
-    const char thousands_sep = (facet != NULL) ? facet->thousands_sep() : ',';
-    enum ErrorCodes {
-        ERR_WRONG_CHAR = -1,
-        ERR_NO_DIGITS = -2,
-        ERR_WRONG_STATE = -3,
-        ERR_STREAM_GET_ERROR = -4
+        virtual std::string grouping() const {
+            return "";
+        }
     };
 
-    before = after = 0;
-    sign = 1;
+    // value format with full specification stored in fields
+    class decimal_format: public basic_decimal_format {
+    public:
 
-    int error = 0;
-    int digitsCount = 0;
-    int afterDigitCount = 0;
-    char c;
+        decimal_format(char decimal_point) :
+          m_decimal_point(decimal_point),
+          m_thousands_sep(','),
+          m_thousands_grouping(false),
+          m_grouping("") {
+        }
 
-    while ((input) && (state != IN_END)) // loop while extraction from file is possible
+        decimal_format(char decimal_point, char thousands_sep) : m_decimal_point(decimal_point),
+                                                                       m_thousands_sep(thousands_sep),
+                                                                       m_thousands_grouping(thousands_sep != '\0'),
+                                                                       m_grouping(thousands_sep != '\0' ? "\03" : "") {
+
+        }
+
+        decimal_format(char decimal_point, char thousands_sep, bool thousands_grouping) : m_decimal_point(decimal_point),
+                                                                                                m_thousands_sep(thousands_sep),
+                                                                                                m_thousands_grouping(thousands_grouping),
+                                                                                                m_grouping(thousands_grouping ? "\03" : "") {
+
+        }
+
+        decimal_format(char decimal_point, char thousands_sep, bool thousands_grouping, const std::string &grouping) :
+                m_decimal_point(decimal_point),
+                m_thousands_sep(thousands_sep),
+                m_thousands_grouping(thousands_grouping),
+                m_grouping(grouping) {
+
+        }
+
+        decimal_format(const decimal_format &source): m_decimal_point(source.m_decimal_point),
+                                                                  m_thousands_sep(source.m_thousands_sep),
+                                                                  m_thousands_grouping(source.m_thousands_grouping),
+                                                                  m_grouping(source.m_grouping) {
+
+        }
+
+        decimal_format & operator=(const decimal_format &rhs) {
+            if (&rhs != this) {
+                m_decimal_point = rhs.m_decimal_point;
+                m_thousands_sep = rhs.m_thousands_sep;
+                m_thousands_grouping = rhs.m_thousands_grouping;
+                m_grouping = rhs.grouping();
+            }
+            return *this;
+        }
+
+        char decimal_point() const override {
+            return m_decimal_point;
+        }
+
+        char thousands_sep() const override {
+            return m_thousands_sep;
+        }
+
+        bool thousands_grouping() const override {
+            return m_thousands_grouping;
+        }
+
+        std::string grouping() const override {
+            return m_grouping;
+        }
+
+    private:
+        char m_decimal_point;
+        char m_thousands_sep;
+        bool m_thousands_grouping;
+        std::string m_grouping;
+    };
+
+    class decimal_format_punct : public std::numpunct<char>
     {
-        c = static_cast<char>(input.get());
+    public:
+        decimal_format_punct(const basic_decimal_format &format): m_format(format) {}
 
-        switch (state) {
-        case IN_SIGN:
-            if (c == '-') {
-                sign = -1;
-                state = IN_BEFORE_FIRST_DIG;
-            } else if (c == '+') {
-                state = IN_BEFORE_FIRST_DIG;
-            } else if ((c >= '0') && (c <= '9')) {
-                state = IN_BEFORE_DEC;
-                before = static_cast<int>(c - '0');
-                digitsCount++;
-            } else if (c == dec_point) {
-                state = IN_AFTER_DEC;
-            } else if ((c != ' ') && (c != '\t')) {
-                state = IN_END;
-                error = ERR_WRONG_CHAR;
-            }
-            // else ignore char
-            break;
-        case IN_BEFORE_FIRST_DIG:
-            if ((c >= '0') && (c <= '9')) {
-                before = 10 * before + static_cast<int>(c - '0');
-                state = IN_BEFORE_DEC;
-                digitsCount++;
-            } else if (c == dec_point) {
-                state = IN_AFTER_DEC;
-            } else {
-                state = IN_END;
-                error = ERR_WRONG_CHAR;
-            }
-            break;
-        case IN_BEFORE_DEC:
-            if ((c >= '0') && (c <= '9')) {
-                before = 10 * before + static_cast<int>(c - '0');
-                digitsCount++;
-            } else if (c == dec_point) {
-                state = IN_AFTER_DEC;
-            } else if (thousands_grouping && c == thousands_sep) {
-                ; // ignore the char
-            } else {
-                state = IN_END;
-            }
-            break;
-        case IN_AFTER_DEC:
-            if ((c >= '0') && (c <= '9')) {
-                after = 10 * after + static_cast<int>(c - '0');
-                afterDigitCount++;
-                if (afterDigitCount >= DEC_NAMESPACE::max_decimal_points)
-                    state = IN_END;
-            } else {
-                state = IN_END;
-                if (digitsCount == 0) {
-                    error = ERR_NO_DIGITS;
-                }
-            }
-            break;
-        default:
-            error = ERR_WRONG_STATE;
-            state = IN_END;
-            break;
-        } // switch state
-    } // while stream good & not end
+    protected:
+        virtual char do_thousands_sep() const { return m_format.thousands_sep(); }
+        virtual std::string do_grouping() const { return m_format.grouping(); }
+        const basic_decimal_format &m_format;
+    };
 
-    decimalDigits = afterDigitCount;
+    template<typename StreamType>
+    basic_decimal_format format_from_stream(StreamType &stream) {
+        using namespace std;
+        const numpunct<char> *facet =
+                has_facet<numpunct<char> >(stream.getloc()) ?
+                &use_facet<numpunct<char> >(stream.getloc()) : NULL;
+        const char dec_point = (facet != NULL) ? facet->decimal_point() : '.';
+        const bool thousands_grouping =
+                (facet != NULL) ? (!facet->grouping().empty()) : false;
+        const char thousands_sep = (facet != NULL) ? facet->thousands_sep() : ',';
+        string grouping_spec =
+                (facet != NULL) ? (facet->grouping()) : string("");
+        return decimal_format(dec_point, thousands_sep, thousands_grouping, grouping_spec);
+    }
 
-    if (error >= 0) {
+    /// Exports decimal to stream
+    /// Used format: {-}bbbb.aaaa where
+    /// {-} is optional '-' sign character
+    /// '.' is locale-dependent decimal point character
+    /// bbbb is stream of digits before decimal point
+    /// aaaa is stream of digits after decimal point
+    template<class decimal_type, typename StreamType>
+    void toStream(const decimal_type &arg, const basic_decimal_format &format, StreamType &output) {
+        using namespace std;
 
-        if (sign < 0) {
+        int64 before, after;
+        int sign;
+
+        arg.unpack(before, after);
+        sign = 1;
+
+        if (before < 0) {
+            sign = -1;
             before = -before;
+        }
+
+        if (after < 0) {
+            sign = -1;
             after = -after;
         }
 
-    } else {
-        before = after = 0;
+        if (sign < 0) {
+            output << "-";
+        }
+
+        if (format.thousands_grouping() && format.change_thousands_if_needed()) {
+            std::locale oldloc = output.getloc();
+            output.imbue( std::locale( std::locale::classic(), new decimal_format_punct(format) ) );
+            output << before;
+            output.imbue(oldloc);
+        } else {
+            output << before;
+        }
+
+        if (arg.getDecimalPoints() > 0) {
+            output << format.decimal_point();
+            output << setw(arg.getDecimalPoints()) << setfill('0') << right
+                   << after;
+        }
     }
 
-    return (error >= 0);
-} // function
+    template<class decimal_type, typename StreamType>
+    void toStream(const decimal_type &arg, StreamType &output) {
+        toStream(arg, format_from_stream(output), output);
+    }
 
+namespace details {
+
+    /// Extract values from stream ready to be packed to decimal
+    template<typename StreamType>
+    bool parse_unpacked(StreamType &input, const basic_decimal_format &format, int &sign, int64 &before, int64 &after,
+                        int &decimalDigits) {
+
+        const char dec_point = format.decimal_point();
+        const bool thousands_grouping = format.thousands_grouping();
+        const char thousands_sep = format.thousands_sep();
+
+        enum StateEnum {
+            IN_SIGN, IN_BEFORE_FIRST_DIG, IN_BEFORE_DEC, IN_AFTER_DEC, IN_END
+        } state = IN_SIGN;
+        enum ErrorCodes {
+            ERR_WRONG_CHAR = -1,
+            ERR_NO_DIGITS = -2,
+            ERR_WRONG_STATE = -3,
+            ERR_STREAM_GET_ERROR = -4
+        };
+
+        before = after = 0;
+        sign = 1;
+
+        int error = 0;
+        int digitsCount = 0;
+        int afterDigitCount = 0;
+        char c;
+
+        while ((input) && (state != IN_END)) // loop while extraction from file is possible
+        {
+            c = static_cast<char>(input.get());
+
+            switch (state) {
+            case IN_SIGN:
+                if (c == '-') {
+                    sign = -1;
+                    state = IN_BEFORE_FIRST_DIG;
+                } else if (c == '+') {
+                    state = IN_BEFORE_FIRST_DIG;
+                } else if ((c >= '0') && (c <= '9')) {
+                    state = IN_BEFORE_DEC;
+                    before = static_cast<int>(c - '0');
+                    digitsCount++;
+                } else if (c == dec_point) {
+                    state = IN_AFTER_DEC;
+                } else if ((c != ' ') && (c != '\t')) {
+                    state = IN_END;
+                    error = ERR_WRONG_CHAR;
+                }
+                // else ignore char
+                break;
+            case IN_BEFORE_FIRST_DIG:
+                if ((c >= '0') && (c <= '9')) {
+                    before = 10 * before + static_cast<int>(c - '0');
+                    state = IN_BEFORE_DEC;
+                    digitsCount++;
+                } else if (c == dec_point) {
+                    state = IN_AFTER_DEC;
+                } else {
+                    state = IN_END;
+                    error = ERR_WRONG_CHAR;
+                }
+                break;
+            case IN_BEFORE_DEC:
+                if ((c >= '0') && (c <= '9')) {
+                    before = 10 * before + static_cast<int>(c - '0');
+                    digitsCount++;
+                } else if (c == dec_point) {
+                    state = IN_AFTER_DEC;
+                } else if (thousands_grouping && c == thousands_sep) {
+                    ; // ignore the char
+                } else {
+                    state = IN_END;
+                }
+                break;
+            case IN_AFTER_DEC:
+                if ((c >= '0') && (c <= '9')) {
+                    after = 10 * after + static_cast<int>(c - '0');
+                    afterDigitCount++;
+                    if (afterDigitCount >= DEC_NAMESPACE::max_decimal_points)
+                        state = IN_END;
+                } else {
+                    state = IN_END;
+                    if (digitsCount == 0) {
+                        error = ERR_NO_DIGITS;
+                    }
+                }
+                break;
+            default:
+                error = ERR_WRONG_STATE;
+                state = IN_END;
+                break;
+            } // switch state
+        } // while stream good & not end
+
+        decimalDigits = afterDigitCount;
+
+        if (error >= 0) {
+
+            if (sign < 0) {
+                before = -before;
+                after = -after;
+            }
+
+        } else {
+            before = after = 0;
+        }
+
+        return (error >= 0);
+    } // function
+
+    template<typename StreamType>
+    bool parse_unpacked(StreamType &input, int &sign, int64 &before, int64 &after,
+                        int &decimalDigits) {
+        return parse_unpacked(input, format_from_stream(input), sign, before, after, decimalDigits);
+    }
 }
 ;
 // namespace
@@ -1504,10 +1638,10 @@ bool parse_unpacked(StreamType &input, int &sign, int64 &before, int64 &after,
 /// \param[out] output decimal value, 0 on error
 /// \result Returns true if conversion succeeded
 template<typename decimal_type, typename StreamType>
-bool fromStream(StreamType &input, decimal_type &output) {
+bool fromStream(StreamType &input, const basic_decimal_format &format, decimal_type &output) {
     int sign, afterDigits;
     int64 before, after;
-    bool result = details::parse_unpacked(input, sign, before, after,
+    bool result = details::parse_unpacked(input, format, sign, before, after,
             afterDigits);
     if (result) {
         if (afterDigits <= decimal_type::decimal_points) {
@@ -1536,74 +1670,118 @@ bool fromStream(StreamType &input, decimal_type &output) {
     return result;
 }
 
-/// Exports decimal to string
-/// Used format: {-}bbbb.aaaa where
-/// {-} is optional '-' sign character
-/// '.' is locale-dependent decimal point character
-/// bbbb is stream of digits before decimal point
-/// aaaa is stream of digits after decimal point
-template<int prec, typename roundPolicy>
-std::string &toString(const decimal<prec, roundPolicy> &arg,
-        std::string &output) {
-    using namespace std;
+    template<typename decimal_type, typename StreamType>
+    bool fromStream(StreamType &input, decimal_type &output) {
+        return fromStream(input, format_from_stream(input), output);
+    }
 
-    ostringstream out;
-    toStream(arg, out);
-    output = out.str();
-    return output;
-}
+    /// Exports decimal to string
+    /// Used format: {-}bbbb.aaaa where
+    /// {-} is optional '-' sign character
+    /// '.' is locale-dependent decimal point character
+    /// bbbb is stream of digits before decimal point
+    /// aaaa is stream of digits after decimal point
+    template<int prec, typename roundPolicy>
+    std::string &toString(const decimal<prec, roundPolicy> &arg,
+            const basic_decimal_format &format,
+            std::string &output) {
+        using namespace std;
 
-/// Exports decimal to string
-/// Used format: {-}bbbb.aaaa where
-/// {-} is optional '-' sign character
-/// '.' is locale-dependent decimal point character
-/// bbbb is stream of digits before decimal point
-/// aaaa is stream of digits after decimal point
-template<int prec, typename roundPolicy>
-std::string toString(const decimal<prec, roundPolicy> &arg) {
-    std::string res;
-    toString(arg, res);
-    return res;
-}
+        ostringstream out;
+        toStream(arg, format, out);
+        output = out.str();
+        return output;
+    }
 
-// input
-template<class charT, class traits, int prec, typename roundPolicy>
-std::basic_istream<charT, traits> &
-operator>>(std::basic_istream<charT, traits> & is,
-        decimal<prec, roundPolicy> & d) {
-    if (!fromStream(is, d))
-        d.setUnbiased(0);
-    return is;
-}
+    template<int prec, typename roundPolicy>
+    std::string &toString(const decimal<prec, roundPolicy> &arg,
+                          std::string &output) {
+        using namespace std;
 
-// output
-template<class charT, class traits, int prec, typename roundPolicy>
-std::basic_ostream<charT, traits> &
-operator<<(std::basic_ostream<charT, traits> & os,
-        const decimal<prec, roundPolicy> & d) {
-    toStream(d, os);
-    return os;
-}
+        ostringstream out;
+        toStream(arg, out);
+        output = out.str();
+        return output;
+    }
 
-/// Imports decimal from string
-/// Used format: {-}bbbb.aaaa where
-/// {-} is optional '-' sign character
-/// '.' is locale-dependent decimal point character
-/// bbbb is stream of digits before decimal point
-/// aaaa is stream of digits after decimal point
-template<typename T>
-T fromString(const std::string &str) {
-    std::istringstream is(str);
-    T t;
-    is >> t;
-    return t;
-}
+    /// Exports decimal to string
+    /// Used format: {-}bbbb.aaaa where
+    /// {-} is optional '-' sign character
+    /// '.' is locale-dependent decimal point character
+    /// bbbb is stream of digits before decimal point
+    /// aaaa is stream of digits after decimal point
+    template<int prec, typename roundPolicy>
+    std::string toString(const decimal<prec, roundPolicy> &arg) {
+        std::string res;
+        toString(arg, res);
+        return res;
+    }
 
-template<typename T>
-void fromString(const std::string &str, T &out) {
-    std::istringstream is(str);
-    is >> out;
-}
+    template<int prec, typename roundPolicy>
+    std::string toString(const decimal<prec, roundPolicy> &arg, const basic_decimal_format &format) {
+        std::string res;
+        toString(arg, format, res);
+        return res;
+    }
+
+    // input
+    template<class charT, class traits, int prec, typename roundPolicy>
+    std::basic_istream<charT, traits> &
+    operator>>(std::basic_istream<charT, traits> & is,
+            decimal<prec, roundPolicy> & d) {
+        if (!fromStream(is, d))
+            d.setUnbiased(0);
+        return is;
+    }
+
+    // output
+    template<class charT, class traits, int prec, typename roundPolicy>
+    std::basic_ostream<charT, traits> &
+    operator<<(std::basic_ostream<charT, traits> & os,
+            const decimal<prec, roundPolicy> & d) {
+        toStream(d, os);
+        return os;
+    }
+
+    /// Imports decimal from string
+    /// Used format: {-}bbbb.aaaa where
+    /// {-} is optional '-' sign character
+    /// '.' is locale-dependent decimal point character
+    /// bbbb is stream of digits before decimal point
+    /// aaaa is stream of digits after decimal point
+    template<typename T>
+    T fromString(const std::string &str) {
+        std::istringstream is(str);
+        T t;
+
+        if (!fromStream(is, t)) {
+            t.setUnbiased(0);
+        }
+
+        return t;
+    }
+
+    template<typename T>
+    T fromString(const std::string &str, const basic_decimal_format &format) {
+        std::istringstream is(str);
+        T t;
+
+        if (!fromStream(is, format, t)) {
+            t.setUnbiased(0);
+        }
+
+        return t;
+    }
+
+    template<typename T>
+    void fromString(const std::string &str, const basic_decimal_format &format, T &out) {
+        out = fromString<T>(str, format);
+    }
+
+    template<typename T>
+    void fromString(const std::string &str, T &out) {
+        out = fromString<T>(str);
+    }
 
 } // namespace
 #endif // _DECIMAL_H__
