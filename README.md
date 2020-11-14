@@ -140,9 +140,8 @@ http://www.doxygen.org/
 
 Tested compilers:
 
-- VS2015 Community 
-- VS2013 Community Update 4
-- Code::Blocks 13.12 + MinGW + gcc 4.8.4
+- VS2019 Community (MSVC++ 14.2)
+- gcc 9.3.0
 
 Uses C++11 by default, define DEC_NO_CPP11 symbol if your compiler does not support this standard.
 To use custom namespace, define DEC_NAMESPACE symbol which should contain your target namespace for decimal type.
