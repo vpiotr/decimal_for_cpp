@@ -1208,12 +1208,13 @@ protected:
         if (ownFactor == precFactor) {
             // no conversion required
             m_value = value;
-        } else {
+        }
+        else if (ownFactor > precFactor) {
+            m_value = value * (ownFactor / precFactor);
+        }
+        else {
             // conversion
-            m_value = RoundPolicy::round(
-                    static_cast<cross_float>(value)
-                            * (static_cast<cross_float>(ownFactor)
-                                    / static_cast<cross_float>(precFactor)));
+            RoundPolicy::div_rounded(m_value, value, precFactor / ownFactor);
         }
     }
 
