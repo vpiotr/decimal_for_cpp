@@ -9,6 +9,7 @@
 
 #include "decimal.h"
 #include <boost/integer_traits.hpp>
+#include <type_traits>
 
 /*
 template <typename T>
@@ -1173,4 +1174,23 @@ BOOST_AUTO_TEST_CASE(decimalFromStringWithFormat) {
     dec::decimal<2> d2b(dec::fromString<dec::decimal<2>>(value2, format));
 
     BOOST_CHECK_EQUAL(d2a, d2b);
+}
+
+BOOST_AUTO_TEST_CASE(trivialAndNoThrowConstructor) {
+    BOOST_CHECK_EQUAL(std::is_trivial<dec::decimal<6>>::value, false);
+
+    BOOST_CHECK_EQUAL(std::is_trivially_constructible<dec::decimal<6>>::value, false);
+    BOOST_CHECK_EQUAL(std::is_nothrow_constructible<dec::decimal<6>>::value, true);
+
+    BOOST_CHECK_EQUAL(std::is_trivially_default_constructible<dec::decimal<6>>::value, false);
+    BOOST_CHECK_EQUAL(std::is_nothrow_default_constructible<dec::decimal<6>>::value, true);
+
+    BOOST_CHECK_EQUAL(std::is_trivially_copy_constructible<dec::decimal<6>>::value, true);
+    BOOST_CHECK_EQUAL(std::is_nothrow_copy_constructible<dec::decimal<6>>::value, true);
+
+    BOOST_CHECK_EQUAL(std::is_trivially_copy_assignable<dec::decimal<6>>::value, true);
+    BOOST_CHECK_EQUAL(std::is_nothrow_copy_assignable<dec::decimal<6>>::value, true);
+
+    BOOST_CHECK_EQUAL(std::is_trivially_destructible<dec::decimal<6>>::value, true);
+    BOOST_CHECK_EQUAL(std::is_nothrow_destructible<dec::decimal<6>>::value, true);
 }
