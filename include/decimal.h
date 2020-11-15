@@ -625,12 +625,17 @@ public:
         decimal_points = Prec
     };
 
+#ifdef DEC_NO_CPP11
     decimal() {
         init(0);
     }
     decimal(const decimal &src) {
         init(src);
     }
+#else
+    decimal() noexcept : m_value(0) {}
+    decimal(const decimal &src) = default;
+#endif
     explicit decimal(uint value) {
         init(value);
     }
@@ -656,8 +661,12 @@ public:
         fromString(value, *this);
     }
 
+#ifdef DEC_NO_CPP11
     ~decimal() {
     }
+#else
+    ~decimal() = default;
+#endif
 
     static int64 getPrecFactor() {
         return DecimalFactor<Prec>::value;
@@ -666,11 +675,15 @@ public:
         return Prec;
     }
 
+#ifdef DEC_NO_CPP11
     decimal & operator=(const decimal &rhs) {
         if (&rhs != this)
             m_value = rhs.m_value;
         return *this;
     }
+#else
+    decimal & operator=(const decimal &rhs) = default;
+#endif
 
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
