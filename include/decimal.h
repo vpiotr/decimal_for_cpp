@@ -642,6 +642,9 @@ public:
     explicit decimal(int value) {
         init(value);
     }
+    explicit decimal(long value) {
+        init(value);
+    }
     explicit decimal(int64 value) {
         init(value);
     }
@@ -786,7 +789,13 @@ public:
         return !(*this == rhs);
     }
 
-    const decimal operator+(const decimal &rhs) const {
+    template <typename T>
+    const decimal operator+(const T &rhs) const {
+      return *this + decimal(rhs);
+    }
+
+    template <>
+    const decimal operator+ <decimal>(const decimal &rhs) const {
         decimal result = *this;
         result.m_value += rhs.m_value;
         return result;
@@ -818,7 +827,14 @@ template<int Prec2>
     }
 #endif
 
-    decimal & operator+=(const decimal &rhs) {
+    template <typename T>
+    decimal & operator+=(const T &rhs) {
+        *this += decimal(rhs);
+        return *this;
+    }
+
+    template <>
+    decimal & operator+= <decimal>(const decimal &rhs) {
         m_value += rhs.m_value;
         return *this;
     }
@@ -857,7 +873,13 @@ template<int Prec2>
         return result;
     }
 
-    const decimal operator-(const decimal &rhs) const {
+    template <typename T>
+    const decimal operator-(const T &rhs) const {
+        return *this - decimal(rhs);
+    }
+
+    template <>
+    const decimal operator- <decimal>(const decimal &rhs) const {
         decimal result = *this;
         result.m_value -= rhs.m_value;
         return result;
@@ -889,7 +911,14 @@ template<int Prec2>
     }
 #endif
 
-    decimal & operator-=(const decimal &rhs) {
+    template <typename T>
+    decimal & operator-=(const T &rhs) {
+        *this -= decimal(rhs);
+        return *this;
+    }
+
+    template <>
+    decimal & operator-= <decimal>(const decimal &rhs) {
         m_value -= rhs.m_value;
         return *this;
     }
@@ -918,19 +947,13 @@ template<int Prec2>
     }
 #endif
 
-    const decimal operator*(int rhs) const {
-        decimal result = *this;
-        result.m_value *= rhs;
-        return result;
+    template<typename T>
+    const decimal operator*(const T &rhs) const {
+        return *this * decimal(rhs);
     }
 
-    const decimal operator*(int64 rhs) const {
-        decimal result = *this;
-        result.m_value *= rhs;
-        return result;
-    }
-
-    const decimal operator*(const decimal &rhs) const {
+    template <>
+    const decimal operator* <decimal>(const decimal &rhs) const {
         decimal result = *this;
         result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
                 rhs.m_value, DecimalFactor<Prec>::value);
@@ -956,17 +979,14 @@ template<int Prec2>
     }
 #endif
 
-    decimal & operator*=(int rhs) {
-        m_value *= rhs;
+    template <typename T>
+    decimal & operator*=(const T &rhs) {
+        *this *= decimal(rhs);
         return *this;
     }
 
-    decimal & operator*=(int64 rhs) {
-        m_value *= rhs;
-        return *this;
-    }
-
-    decimal & operator*=(const decimal &rhs) {
+    template <>
+    decimal & operator*= <decimal>(const decimal &rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.m_value,
                 DecimalFactor<Prec>::value);
         return *this;
@@ -991,14 +1011,7 @@ template<int Prec2>
 
     template <typename T>
     const decimal operator/(const T &rhs) const {
-        decimal result = *this;
-
-        if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs)) {
-            result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value, 1,
-                    rhs);
-        }
-
-        return result;
+        return *this / decimal(rhs);
     }
 
     template <>
@@ -1030,23 +1043,14 @@ template<int Prec2>
     }
 #endif
 
-    decimal & operator/=(int rhs) {
-        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
-            this->m_value = dec_utils<RoundPolicy>::multDiv(this->m_value, 1,
-                    rhs);
-        }
+    template <typename T>
+    decimal & operator/=(const T &rhs) {
+        *this /= decimal(rhs);
         return *this;
     }
 
-    decimal & operator/=(int64 rhs) {
-        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
-            this->m_value = dec_utils<RoundPolicy>::multDiv(this->m_value, 1,
-                    rhs);
-        }
-        return *this;
-    }
-
-    decimal & operator/=(const decimal &rhs) {
+    template <>
+    decimal & operator/= <decimal>(const decimal &rhs) {
         //m_value = (m_value * DecimalFactor<Prec>::value) / rhs.m_value;
         m_value = dec_utils<RoundPolicy>::multDiv(m_value,
                 DecimalFactor<Prec>::value, rhs.m_value);
@@ -1223,6 +1227,10 @@ protected:
     }
 
     void init(int value) {
+        m_value = DecimalFactor<Prec>::value * value;
+    }
+
+    void init(long value) {
         m_value = DecimalFactor<Prec>::value * value;
     }
 
