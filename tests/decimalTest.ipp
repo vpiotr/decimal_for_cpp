@@ -914,6 +914,9 @@ BOOST_AUTO_TEST_CASE(decimalString)
 BOOST_AUTO_TEST_CASE(decimalComparison)
         {
                 const double pi = 3.1415926;
+                BOOST_CHECK_EQUAL(dec::decimal<8>(0.), 0);
+                BOOST_CHECK_EQUAL(dec::decimal<8>(0.), 0u);
+                BOOST_CHECK_EQUAL(dec::decimal<8>(0.), 0L);
                 BOOST_CHECK_EQUAL(dec::decimal<8>(0.), 0.);
                 BOOST_CHECK_EQUAL(dec::decimal<8>(pi), pi);
                 BOOST_CHECK_EQUAL(dec::decimal<8>(pi), dec::decimal<8>(pi));
