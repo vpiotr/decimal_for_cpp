@@ -642,9 +642,11 @@ public:
     explicit decimal(int value) {
         init(value);
     }
+#if defined(__APPLE__) || defined(__MACH__)
     explicit decimal(long value) {
         init(value);
     }
+#endif
     explicit decimal(int64 value) {
         init(value);
     }
@@ -759,33 +761,27 @@ public:
         return !(*this == rhs);
     }
 
-    template <>
-    bool operator== <decimal>(const decimal &rhs) const {
+    bool operator==(const decimal &rhs) const {
         return (m_value == rhs.m_value);
     }
 
-    template <>
-    bool operator< <decimal>(const decimal &rhs) const {
+    bool operator<(const decimal &rhs) const {
         return (m_value < rhs.m_value);
     }
 
-    template <>
-    bool operator<= <decimal>(const decimal &rhs) const {
+    bool operator<=(const decimal &rhs) const {
         return (m_value <= rhs.m_value);
     }
 
-    template <>
-    bool operator> <decimal>(const decimal &rhs) const {
+    bool operator>(const decimal &rhs) const {
         return (m_value > rhs.m_value);
     }
 
-    template <>
-    bool operator>= <decimal>(const decimal &rhs) const {
+    bool operator>=(const decimal &rhs) const {
         return (m_value >= rhs.m_value);
     }
 
-    template <>
-    bool operator!= <decimal>(const decimal &rhs) const {
+    bool operator!=(const decimal &rhs) const {
         return !(*this == rhs);
     }
 
@@ -794,8 +790,7 @@ public:
       return *this + decimal(rhs);
     }
 
-    template <>
-    const decimal operator+ <decimal>(const decimal &rhs) const {
+    const decimal operator+(const decimal &rhs) const {
         decimal result = *this;
         result.m_value += rhs.m_value;
         return result;
@@ -833,8 +828,7 @@ template<int Prec2>
         return *this;
     }
 
-    template <>
-    decimal & operator+= <decimal>(const decimal &rhs) {
+    decimal & operator+=(const decimal &rhs) {
         m_value += rhs.m_value;
         return *this;
     }
@@ -878,8 +872,7 @@ template<int Prec2>
         return *this - decimal(rhs);
     }
 
-    template <>
-    const decimal operator- <decimal>(const decimal &rhs) const {
+    const decimal operator-(const decimal &rhs) const {
         decimal result = *this;
         result.m_value -= rhs.m_value;
         return result;
@@ -917,8 +910,7 @@ template<int Prec2>
         return *this;
     }
 
-    template <>
-    decimal & operator-= <decimal>(const decimal &rhs) {
+    decimal & operator-=(const decimal &rhs) {
         m_value -= rhs.m_value;
         return *this;
     }
@@ -952,8 +944,7 @@ template<int Prec2>
         return *this * decimal(rhs);
     }
 
-    template <>
-    const decimal operator* <decimal>(const decimal &rhs) const {
+    const decimal operator*(const decimal &rhs) const {
         decimal result = *this;
         result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
                 rhs.m_value, DecimalFactor<Prec>::value);
@@ -985,8 +976,7 @@ template<int Prec2>
         return *this;
     }
 
-    template <>
-    decimal & operator*= <decimal>(const decimal &rhs) {
+    decimal & operator*=(const decimal &rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.m_value,
                 DecimalFactor<Prec>::value);
         return *this;
@@ -1014,8 +1004,7 @@ template<int Prec2>
         return *this / decimal(rhs);
     }
 
-    template <>
-    const decimal operator/ <decimal>(const decimal &rhs) const {
+    const decimal operator/(const decimal &rhs) const {
         decimal result = *this;
         //result.m_value = (result.m_value * DecimalFactor<Prec>::value) / rhs.m_value;
         result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
@@ -1049,8 +1038,7 @@ template<int Prec2>
         return *this;
     }
 
-    template <>
-    decimal & operator/= <decimal>(const decimal &rhs) {
+    decimal & operator/=(const decimal &rhs) {
         //m_value = (m_value * DecimalFactor<Prec>::value) / rhs.m_value;
         m_value = dec_utils<RoundPolicy>::multDiv(m_value,
                 DecimalFactor<Prec>::value, rhs.m_value);
@@ -1230,9 +1218,11 @@ protected:
         m_value = DecimalFactor<Prec>::value * value;
     }
 
+#if defined(__APPLE__) || defined(__MACH__)
     void init(long value) {
         m_value = DecimalFactor<Prec>::value * value;
     }
+#endif
 
     void init(int64 value) {
         m_value = DecimalFactor<Prec>::value * value;
