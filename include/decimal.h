@@ -726,27 +726,63 @@ public:
         return *this;
     }
 
-    bool operator==(const decimal &rhs) const {
+    template <typename T>
+    bool operator==(const T &rhs) const {
+        return (*this == decimal(rhs));
+    }
+
+    template <typename T>
+    bool operator<(const T &rhs) const {
+        return (*this < decimal(rhs));
+    }
+
+    template <typename T>
+    bool operator<=(const T &rhs) const {
+        return (*this <= decimal(rhs));
+    }
+
+    template <typename T>
+    bool operator>(const T &rhs) const {
+        return (*this > decimal(rhs));
+    }
+
+    template <typename T>
+    bool operator>=(const T &rhs) const {
+        return (*this >= decimal(rhs));
+    }
+
+    template <typename T>
+    bool operator!=(const T &rhs) const {
+        return !(*this == rhs);
+    }
+
+    template <>
+    bool operator== <decimal>(const decimal &rhs) const {
         return (m_value == rhs.m_value);
     }
 
-    bool operator<(const decimal &rhs) const {
+    template <>
+    bool operator< <decimal>(const decimal &rhs) const {
         return (m_value < rhs.m_value);
     }
 
-    bool operator<=(const decimal &rhs) const {
+    template <>
+    bool operator<= <decimal>(const decimal &rhs) const {
         return (m_value <= rhs.m_value);
     }
 
-    bool operator>(const decimal &rhs) const {
+    template <>
+    bool operator> <decimal>(const decimal &rhs) const {
         return (m_value > rhs.m_value);
     }
 
-    bool operator>=(const decimal &rhs) const {
+    template <>
+    bool operator>= <decimal>(const decimal &rhs) const {
         return (m_value >= rhs.m_value);
     }
 
-    bool operator!=(const decimal &rhs) const {
+    template <>
+    bool operator!= <decimal>(const decimal &rhs) const {
         return !(*this == rhs);
     }
 
