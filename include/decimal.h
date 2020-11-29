@@ -953,7 +953,8 @@ template<int Prec2>
     }
 #endif
 
-    const decimal operator/(int rhs) const {
+    template <typename T>
+    const decimal operator/(const T &rhs) const {
         decimal result = *this;
 
         if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs)) {
@@ -964,18 +965,8 @@ template<int Prec2>
         return result;
     }
 
-    const decimal operator/(int64 rhs) const {
-        decimal result = *this;
-
-        if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs)) {
-            result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value, 1,
-                    rhs);
-        }
-
-        return result;
-    }
-
-    const decimal operator/(const decimal &rhs) const {
+    template <>
+    const decimal operator/ <decimal>(const decimal &rhs) const {
         decimal result = *this;
         //result.m_value = (result.m_value * DecimalFactor<Prec>::value) / rhs.m_value;
         result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
