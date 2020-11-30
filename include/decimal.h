@@ -109,11 +109,13 @@ typedef signed long long DEC_INT64;
 #endif // DEC_EXTERNAL_INT64
 // <--
 
+// --> define DEC_HANDLE_LONG if const long meets ambiguous conversion.
 #ifndef DEC_HANDLE_LONG
 #if defined(__APPLE__) || defined(__MACH__)
 #define DEC_HANDLE_LONG
 #endif
-#endif
+#endif // DEC_HANDLE_LONG
+// <--
 
 #ifdef DEC_NO_CPP11
 #define static_assert(a,b)
