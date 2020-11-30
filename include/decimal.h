@@ -109,6 +109,14 @@ typedef signed long long DEC_INT64;
 #endif // DEC_EXTERNAL_INT64
 // <--
 
+// --> define DEC_HANDLE_LONG if const long meets ambiguous conversion.
+#ifndef DEC_HANDLE_LONG
+#if defined(__APPLE__) || defined(__MACH__)
+#define DEC_HANDLE_LONG
+#endif
+#endif // DEC_HANDLE_LONG
+// <--
+
 #ifdef DEC_NO_CPP11
 #define static_assert(a,b)
 #endif
@@ -642,6 +650,11 @@ public:
     explicit decimal(int value) {
         init(value);
     }
+#ifdef DEC_HANDLE_LONG
+    explicit decimal(long value) {
+        init(value);
+    }
+#endif
     explicit decimal(int64 value) {
         init(value);
     }
@@ -726,6 +739,36 @@ public:
         return *this;
     }
 
+    template <typename T>
+    bool operator==(const T &rhs) const {
+        return (*this == static_cast<decimal>(rhs));
+    }
+
+    template <typename T>
+    bool operator<(const T &rhs) const {
+        return (*this < static_cast<decimal>(rhs));
+    }
+
+    template <typename T>
+    bool operator<=(const T &rhs) const {
+        return (*this <= static_cast<decimal>(rhs));
+    }
+
+    template <typename T>
+    bool operator>(const T &rhs) const {
+        return (*this > static_cast<decimal>(rhs));
+    }
+
+    template <typename T>
+    bool operator>=(const T &rhs) const {
+        return (*this >= static_cast<decimal>(rhs));
+    }
+
+    template <typename T>
+    bool operator!=(const T &rhs) const {
+        return !(*this == rhs);
+    }
+
     bool operator==(const decimal &rhs) const {
         return (m_value == rhs.m_value);
     }
@@ -748,6 +791,11 @@ public:
 
     bool operator!=(const decimal &rhs) const {
         return !(*this == rhs);
+    }
+
+    template <typename T>
+    const decimal operator+(const T &rhs) const {
+      return *this + static_cast<decimal>(rhs);
     }
 
     const decimal operator+(const decimal &rhs) const {
@@ -781,6 +829,12 @@ template<int Prec2>
         return result;
     }
 #endif
+
+    template <typename T>
+    decimal & operator+=(const T &rhs) {
+        *this += static_cast<decimal>(rhs);
+        return *this;
+    }
 
     decimal & operator+=(const decimal &rhs) {
         m_value += rhs.m_value;
@@ -821,6 +875,11 @@ template<int Prec2>
         return result;
     }
 
+    template <typename T>
+    const decimal operator-(const T &rhs) const {
+        return *this - static_cast<decimal>(rhs);
+    }
+
     const decimal operator-(const decimal &rhs) const {
         decimal result = *this;
         result.m_value -= rhs.m_value;
@@ -853,6 +912,12 @@ template<int Prec2>
     }
 #endif
 
+    template <typename T>
+    decimal & operator-=(const T &rhs) {
+        *this -= static_cast<decimal>(rhs);
+        return *this;
+    }
+
     decimal & operator-=(const decimal &rhs) {
         m_value -= rhs.m_value;
         return *this;
@@ -882,16 +947,9 @@ template<int Prec2>
     }
 #endif
 
-    const decimal operator*(int rhs) const {
-        decimal result = *this;
-        result.m_value *= rhs;
-        return result;
-    }
-
-    const decimal operator*(int64 rhs) const {
-        decimal result = *this;
-        result.m_value *= rhs;
-        return result;
+    template<typename T>
+    const decimal operator*(const T &rhs) const {
+        return *this * static_cast<decimal>(rhs);
     }
 
     const decimal operator*(const decimal &rhs) const {
@@ -920,13 +978,9 @@ template<int Prec2>
     }
 #endif
 
-    decimal & operator*=(int rhs) {
-        m_value *= rhs;
-        return *this;
-    }
-
-    decimal & operator*=(int64 rhs) {
-        m_value *= rhs;
+    template <typename T>
+    decimal & operator*=(const T &rhs) {
+        *this *= static_cast<decimal>(rhs);
         return *this;
     }
 
@@ -953,26 +1007,9 @@ template<int Prec2>
     }
 #endif
 
-    const decimal operator/(int rhs) const {
-        decimal result = *this;
-
-        if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs)) {
-            result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value, 1,
-                    rhs);
-        }
-
-        return result;
-    }
-
-    const decimal operator/(int64 rhs) const {
-        decimal result = *this;
-
-        if (!RoundPolicy::div_rounded(result.m_value, this->m_value, rhs)) {
-            result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value, 1,
-                    rhs);
-        }
-
-        return result;
+    template <typename T>
+    const decimal operator/(const T &rhs) const {
+        return *this / static_cast<decimal>(rhs);
     }
 
     const decimal operator/(const decimal &rhs) const {
@@ -1003,19 +1040,9 @@ template<int Prec2>
     }
 #endif
 
-    decimal & operator/=(int rhs) {
-        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
-            this->m_value = dec_utils<RoundPolicy>::multDiv(this->m_value, 1,
-                    rhs);
-        }
-        return *this;
-    }
-
-    decimal & operator/=(int64 rhs) {
-        if (!RoundPolicy::div_rounded(this->m_value, this->m_value, rhs)) {
-            this->m_value = dec_utils<RoundPolicy>::multDiv(this->m_value, 1,
-                    rhs);
-        }
+    template <typename T>
+    decimal & operator/=(const T &rhs) {
+        *this /= static_cast<decimal>(rhs);
         return *this;
     }
 
@@ -1198,6 +1225,12 @@ protected:
     void init(int value) {
         m_value = DecimalFactor<Prec>::value * value;
     }
+
+#ifdef DEC_HANDLE_LONG
+    void init(long value) {
+        m_value = DecimalFactor<Prec>::value * value;
+    }
+#endif
 
     void init(int64 value) {
         m_value = DecimalFactor<Prec>::value * value;

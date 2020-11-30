@@ -911,6 +911,25 @@ BOOST_AUTO_TEST_CASE(decimalString)
                 BOOST_CHECK(d == fromString<decimal<4> >(sneg));
         }
 
+BOOST_AUTO_TEST_CASE(decimalComparison)
+        {
+                const double pi = 3.1415926;
+                BOOST_CHECK_EQUAL(dec::decimal<8>(0.), 0);
+                BOOST_CHECK_EQUAL(dec::decimal<8>(0.), 0u);
+                BOOST_CHECK_EQUAL(dec::decimal<8>(0.), 0L);
+                BOOST_CHECK_EQUAL(dec::decimal<8>(0.), 0.);
+                BOOST_CHECK_EQUAL(dec::decimal<8>(pi), pi);
+                BOOST_CHECK_EQUAL(dec::decimal<8>(pi), dec::decimal<8>(pi));
+                BOOST_CHECK(dec::decimal<8>(pi) < 5);
+                BOOST_CHECK(dec::decimal<8>(pi) <= 5);
+                BOOST_CHECK(dec::decimal<8>(pi) <= pi);
+                BOOST_CHECK(dec::decimal<8>(pi) > 3);
+                BOOST_CHECK(dec::decimal<8>(pi) >= 3);
+                BOOST_CHECK(dec::decimal<8>(pi) >= pi);
+                BOOST_CHECK(dec::decimal<8>(pi) != 3);
+                BOOST_CHECK(dec::decimal<8>(pi) != 3.0);
+        }
+
 BOOST_AUTO_TEST_CASE(decimalSign)
         {
                 dec::decimal<4> d(-4.1234);
