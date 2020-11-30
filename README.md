@@ -1,15 +1,18 @@
 # About     
 Decimal data type support, for COBOL-like fixed-point operations on currency/money values.
 
+![decimal_for_cpp](https://github.com/vpiotr/decimal_for_cpp/workflows/decimal_for_cpp/badge.svg?branch=master)
+
 Author: Piotr Likus
 
 Created: 03/01/2011
 
-Modified: 23/09/2018
+Modified: 30/11/2020
 
 Licence: BSD
 
-Version: 1.16
+Version: 1.17
+
 
 This data type is designed to perform calculation with on-fly  roundings
 &  to  support  correct  compare  function  (floating-point  compare  is
@@ -104,6 +107,15 @@ d4 += d2;
 cout << "mixed d2 = " << d2 << endl;
 // for default setup displays: mixed d4 = 687.2303
 cout << "mixed d4 = " << d4 << endl;
+
+// supports decimal and thousand separator localization
+dec::decimal_format format(',', '.');
+
+std::string srcText   = "315499999999999.98";
+std::string formatted = "315.499.999.999.999,98";
+dec::decimal<2> srcDecimal(srcText);
+
+BOOST_CHECK_EQUAL(dec::toString(srcDecimal, format), formatted);
 
 ```
 
