@@ -733,27 +733,27 @@ public:
 
     template <typename T>
     bool operator==(const T &rhs) const {
-        return (*this == decimal(rhs));
+        return (*this == static_cast<decimal>(rhs));
     }
 
     template <typename T>
     bool operator<(const T &rhs) const {
-        return (*this < decimal(rhs));
+        return (*this < static_cast<decimal>(rhs));
     }
 
     template <typename T>
     bool operator<=(const T &rhs) const {
-        return (*this <= decimal(rhs));
+        return (*this <= static_cast<decimal>(rhs));
     }
 
     template <typename T>
     bool operator>(const T &rhs) const {
-        return (*this > decimal(rhs));
+        return (*this > static_cast<decimal>(rhs));
     }
 
     template <typename T>
     bool operator>=(const T &rhs) const {
-        return (*this >= decimal(rhs));
+        return (*this >= static_cast<decimal>(rhs));
     }
 
     template <typename T>
@@ -787,7 +787,7 @@ public:
 
     template <typename T>
     const decimal operator+(const T &rhs) const {
-      return *this + decimal(rhs);
+      return *this + static_cast<decimal>(rhs);
     }
 
     const decimal operator+(const decimal &rhs) const {
@@ -824,7 +824,7 @@ template<int Prec2>
 
     template <typename T>
     decimal & operator+=(const T &rhs) {
-        *this += decimal(rhs);
+        *this += static_cast<decimal>(rhs);
         return *this;
     }
 
@@ -869,7 +869,7 @@ template<int Prec2>
 
     template <typename T>
     const decimal operator-(const T &rhs) const {
-        return *this - decimal(rhs);
+        return *this - static_cast<decimal>(rhs);
     }
 
     const decimal operator-(const decimal &rhs) const {
@@ -906,7 +906,7 @@ template<int Prec2>
 
     template <typename T>
     decimal & operator-=(const T &rhs) {
-        *this -= decimal(rhs);
+        *this -= static_cast<decimal>(rhs);
         return *this;
     }
 
@@ -941,7 +941,7 @@ template<int Prec2>
 
     template<typename T>
     const decimal operator*(const T &rhs) const {
-        return *this * decimal(rhs);
+        return *this * static_cast<decimal>(rhs);
     }
 
     const decimal operator*(const decimal &rhs) const {
@@ -972,7 +972,7 @@ template<int Prec2>
 
     template <typename T>
     decimal & operator*=(const T &rhs) {
-        *this *= decimal(rhs);
+        *this *= static_cast<decimal>(rhs);
         return *this;
     }
 
@@ -1001,7 +1001,7 @@ template<int Prec2>
 
     template <typename T>
     const decimal operator/(const T &rhs) const {
-        return *this / decimal(rhs);
+        return *this / static_cast<decimal>(rhs);
     }
 
     const decimal operator/(const decimal &rhs) const {
@@ -1034,7 +1034,7 @@ template<int Prec2>
 
     template <typename T>
     decimal & operator/=(const T &rhs) {
-        *this /= decimal(rhs);
+        *this /= static_cast<decimal>(rhs);
         return *this;
     }
 
