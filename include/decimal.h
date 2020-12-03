@@ -196,11 +196,25 @@ inline bool div_rounded(int64 &output, int64 a, int64 b) {
         if (DEC_MAX_INT64 - a >= divisorCorr) {
             output = (a + divisorCorr) / b;
             return true;
+        } else {
+            int64 i = a / b;
+            int64 r = a - i * b;
+            if (r < divisorCorr) {
+                output = i;
+                return true;
+            }
         }
     } else {
         if (-(DEC_MIN_INT64 - a) >= divisorCorr) {
             output = (a - divisorCorr) / b;
             return true;
+        } else {
+            int64 i = a / b;
+            int64 r = a - i * b;
+            if (r < divisorCorr) {
+                output = i;
+                return true;
+            }
         }
     }
 
