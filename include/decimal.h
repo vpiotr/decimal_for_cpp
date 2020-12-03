@@ -197,8 +197,8 @@ inline bool div_rounded(int64 &output, int64 a, int64 b) {
             output = (a + divisorCorr) / b;
             return true;
         } else {
-            int64 i = a / b;
-            int64 r = a - i * b;
+            const int64 i = a / b;
+            const int64 r = a - i * b;
             if (r < divisorCorr) {
                 output = i;
                 return true;
@@ -209,8 +209,8 @@ inline bool div_rounded(int64 &output, int64 a, int64 b) {
             output = (a - divisorCorr) / b;
             return true;
         } else {
-            int64 i = a / b;
-            int64 r = a - i * b;
+            const int64 i = a / b;
+            const int64 r = a - i * b;
             if (r < divisorCorr) {
                 output = i;
                 return true;
