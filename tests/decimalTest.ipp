@@ -421,6 +421,12 @@ BOOST_AUTO_TEST_CASE(decimalMaxUIntCtor)
                 BOOST_CHECK_EQUAL( a.getAsInteger(), uint_max);
         }
 
+BOOST_AUTO_TEST_CASE(decimalMaxInt64Ctor)
+        {
+                const dec::decimal<7> n{922337203685.4};
+                BOOST_CHECK(n.getAsInteger() == 922337203685);
+        }
+
 BOOST_AUTO_TEST_CASE(decimalAsInteger)
         {
                 // rounded value
