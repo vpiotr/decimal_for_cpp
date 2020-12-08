@@ -24,7 +24,7 @@ jobs:
           rm -rf b
           mkdir -p b
           cd b
-          cmake -DCMAKE_CXX_STANDARD=11 ../
+          cmake -DDECIMAL_BUILD_TESTS=ON -DCMAKE_CXX_STANDARD=11 ../
           make VERBOSE=1 && ./test_runner
 
       - name: Build c++14
@@ -33,7 +33,7 @@ jobs:
           rm -rf b
           mkdir -p b
           cd b
-          cmake -DCMAKE_CXX_STANDARD=14 ../
+          cmake -DDECIMAL_BUILD_TESTS=ON -DCMAKE_CXX_STANDARD=14 ../
           make VERBOSE=1 && ./test_runner
 
       - name: Build c++17
@@ -42,7 +42,7 @@ jobs:
           rm -rf b
           mkdir -p b
           cd b
-          cmake -DCMAKE_CXX_STANDARD=17 ../
+          cmake -DDECIMAL_BUILD_TESTS=ON -DCMAKE_CXX_STANDARD=17 ../
           make VERBOSE=1 && ./test_runner
 
   macos:
@@ -65,7 +65,7 @@ jobs:
           rm -rf b
           mkdir -p b
           cd b
-          cmake -DCMAKE_CXX_STANDARD=11 ../
+          cmake -DDECIMAL_BUILD_TESTS=ON -DCMAKE_CXX_STANDARD=11 ../
           make VERBOSE=1 && ./test_runner
 
       - name: Build c++14
@@ -74,7 +74,7 @@ jobs:
           rm -rf b
           mkdir -p b
           cd b
-          cmake -DCMAKE_CXX_STANDARD=14 ../
+          cmake -DDECIMAL_BUILD_TESTS=ON -DCMAKE_CXX_STANDARD=14 ../
           make VERBOSE=1 && ./test_runner
 
       - name: Build c++17
@@ -83,5 +83,5 @@ jobs:
           rm -rf b
           mkdir -p b
           cd b
-          cmake -DCMAKE_CXX_STANDARD=17 ../
+          cmake -DDECIMAL_BUILD_TESTS=ON -DCMAKE_CXX_STANDARD=17 ../
           make VERBOSE=1 && ./test_runner
