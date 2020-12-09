@@ -137,6 +137,34 @@ In order to use one of these rounding modes you need to declare your decimal var
     
 and it will perform required rounding automatically - for example during assignment or arithmetic operations.    
 
+# Testing
+
+In order to test the library:
+
+    cd ~/tmp
+    git clone https://github.com/vpiotr/decimal_for_cpp.git
+    cd decimal_for_cpp
+    mkdir _build
+    cd _build
+    
+    # to create makefile with test support
+    cmake ..    
+    # or
+    cmake -DBUILD_TESTING=ON ..
+
+    # to create makefile without test support (and to avoid Boost unit testing)
+    cmake -DBUILD_TESTING=OFF ..
+    
+    # to build or install library (only required for testing)
+    make all
+    
+    # to execute all test runners 
+    make test
+    
+    # to execute specific runner
+    ./test_runner
+
+
 # Other information
 For more examples please see \test directory.
 
