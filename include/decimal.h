@@ -758,6 +758,12 @@ public:
         return (*this == static_cast<decimal>(rhs));
     }
 
+#if __cplusplus > 201703L
+    template<typename T>
+    auto operator<=>(const T &rhs) const {
+        return (*this <=> static_cast<decimal>(rhs));
+    }
+#else
     template <typename T>
     bool operator<(const T &rhs) const {
         return (*this < static_cast<decimal>(rhs));
@@ -782,11 +788,17 @@ public:
     bool operator!=(const T &rhs) const {
         return !(*this == rhs);
     }
+#endif
 
     bool operator==(const decimal &rhs) const {
         return (m_value == rhs.m_value);
     }
 
+#if __cplusplus > 201703L
+    auto operator<=>(const decimal &rhs) const {
+        return m_value <=> rhs.m_value;
+    }
+#else
     bool operator<(const decimal &rhs) const {
         return (m_value < rhs.m_value);
     }
@@ -806,6 +818,7 @@ public:
     bool operator!=(const decimal &rhs) const {
         return !(*this == rhs);
     }
+#endif
 
     template <typename T>
     const decimal operator+(const T &rhs) const {
