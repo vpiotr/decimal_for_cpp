@@ -35,6 +35,7 @@
 // - define DEC_CROSS_DOUBLE if you want to use double (instead of xdouble) for cross-conversions
 // - define DEC_EXTERNAL_LIMITS to define by yourself DEC_MAX_INT32
 // - define DEC_NO_CPP11 if your compiler does not support C++11
+// - define DEC_ALLOW_SPACESHIP_OPER as 1 if your compiler supports spaceship operator
 // - define DEC_TYPE_LEVEL as 0 for strong typing (same precision required for both arguments),
 //   as 1 for allowing to mix lower or equal precision types
 //   as 2 for automatic rounding when different precision is mixed
@@ -66,6 +67,13 @@
 #include <stdint.h>
 #endif // defined
 #endif // DEC_NO_CPP11
+
+#if (DEC_ALLOW_SPACESHIP_OPER == 1) && (__cplusplus > 201703L)
+#define DEC_USE_SPACESHIP_OPER 1
+#else
+#undef DEC_USE_SPACESHIP_OPER
+#define DEC_USE_SPACESHIP_OPER 0
+#endif
 
 // <--
 
@@ -753,6 +761,12 @@ public:
         return *this;
     }
 
+#if DEC_USE_SPACESHIP_OPER
+    template<typename T>
+    auto operator<=>(const T &rhs) const {
+        return (*this <=> decimal_cast(rhs));
+    }
+#else
     template <typename T>
     bool operator==(const T &rhs) const {
         return (*this == static_cast<decimal>(rhs));
@@ -782,7 +796,13 @@ public:
     bool operator!=(const T &rhs) const {
         return !(*this == rhs);
     }
+#endif
 
+#if DEC_USE_SPACESHIP_OPER
+    auto operator<=>(const decimal &rhs) const {
+        return m_value <=> rhs.m_value;
+    }
+#else
     bool operator==(const decimal &rhs) const {
         return (m_value == rhs.m_value);
     }
@@ -806,6 +826,7 @@ public:
     bool operator!=(const decimal &rhs) const {
         return !(*this == rhs);
     }
+#endif
 
     template <typename T>
     const decimal operator+(const T &rhs) const {
