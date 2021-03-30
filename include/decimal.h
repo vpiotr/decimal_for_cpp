@@ -761,17 +761,22 @@ public:
         return *this;
     }
 
-#if DEC_USE_SPACESHIP_OPER
-    template<typename T>
-    auto operator<=>(const T &rhs) const {
-        return (*this <=> decimal_cast(rhs));
-    }
-#else
     template <typename T>
     bool operator==(const T &rhs) const {
         return (*this == static_cast<decimal>(rhs));
     }
 
+    template <typename T>
+    bool operator!=(const T &rhs) const {
+        return !(*this == rhs);
+    }
+
+#if DEC_USE_SPACESHIP_OPER
+    template<typename T>
+    auto operator<=>(const T &rhs) const {
+        return (*this <=> static_cast<decimal>(rhs));
+    }
+#else
     template <typename T>
     bool operator<(const T &rhs) const {
         return (*this < static_cast<decimal>(rhs));
@@ -791,21 +796,21 @@ public:
     bool operator>=(const T &rhs) const {
         return (*this >= static_cast<decimal>(rhs));
     }
+#endif
 
-    template <typename T>
-    bool operator!=(const T &rhs) const {
+    bool operator==(const decimal &rhs) const {
+        return (m_value == rhs.m_value);
+    }
+
+    bool operator!=(const decimal &rhs) const {
         return !(*this == rhs);
     }
-#endif
 
 #if DEC_USE_SPACESHIP_OPER
     auto operator<=>(const decimal &rhs) const {
         return m_value <=> rhs.m_value;
     }
 #else
-    bool operator==(const decimal &rhs) const {
-        return (m_value == rhs.m_value);
-    }
 
     bool operator<(const decimal &rhs) const {
         return (m_value < rhs.m_value);
@@ -821,10 +826,6 @@ public:
 
     bool operator>=(const decimal &rhs) const {
         return (m_value >= rhs.m_value);
-    }
-
-    bool operator!=(const decimal &rhs) const {
-        return !(*this == rhs);
     }
 #endif
 
