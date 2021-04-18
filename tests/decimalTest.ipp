@@ -1219,3 +1219,74 @@ BOOST_AUTO_TEST_CASE(trivialAndNoThrowConstructor) {
     BOOST_CHECK_EQUAL(std::is_trivially_destructible<dec::decimal<6>>::value, true);
     BOOST_CHECK_EQUAL(std::is_nothrow_destructible<dec::decimal<6>>::value, true);
 }
+
+BOOST_AUTO_TEST_CASE(testFloor) {
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2).floor(), 2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2.4).floor(), 2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2.9).floor(), 2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-2.7).floor(), -3);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-2).floor(), -2);
+}
+
+BOOST_AUTO_TEST_CASE(testCeil) {
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2).ceil(), 2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2.4).ceil(), 3);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2.9).ceil(), 3);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-2.7).ceil(), -2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-2).ceil(), -2);
+}
+
+BOOST_AUTO_TEST_CASE(testRound) {
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2).round(), 2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2.4).round(), 2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2.9).round(), 3);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-2.7).round(), -3);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-2.4).round(), -2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-2).round(), -2);
+}
+
+BOOST_AUTO_TEST_CASE(testTrunc) {
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2).trunc(), 2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2.4).trunc(), 2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(2.9).trunc(), 2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-2.7).trunc(), -2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-2.4).trunc(), -2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-2).trunc(), -2);
+}
+
+BOOST_AUTO_TEST_CASE(testModOperInt) {
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(15) % 4, 3);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-15) % 4, -3);
+
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(11.9) % 4, 3.9);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(12.1) % 4, 0.1);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(12.5) % 4, 0.5);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(12.9) % 4, 0.9);
+
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-11.9) % 4, -3.9);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-12.1) % 4, -0.1);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-12.5) % 4, -0.5);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(-12.9) % 4, -0.9);
+}
+
+BOOST_AUTO_TEST_CASE(testModOperSamePrec) {
+    dec::decimal<2> b(2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(11.6) % b, 1.6);
+    dec::decimal<2> c(2.1);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(11.6) % c, 1.1);
+}
+
+BOOST_AUTO_TEST_CASE(testModOperLowerPrec) {
+    dec::decimal<2> b(2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<3>(11.6) % b, 1.6);
+    dec::decimal<2> c(2.1);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<3>(11.6) % c, 1.1);
+}
+
+BOOST_AUTO_TEST_CASE(testModOperHigherPrec) {
+    dec::decimal<3> b(2);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(11.6) % b, 1.6);
+    dec::decimal<3> c(2.1);
+    BOOST_CHECK_EQUAL(dec::decimal_cast<2>(11.6) % c, 1.1);
+}
+

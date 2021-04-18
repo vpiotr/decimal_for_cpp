@@ -1090,6 +1090,80 @@ template<int Prec2>
         return *this;
     }
 
+    template <typename T>
+    const decimal operator%(T n) const {
+        return *this % static_cast<decimal>(n);
+    }
+
+    template <typename T>
+    decimal & operator%=(T rhs) {
+        *this %= static_cast<decimal>(rhs);
+        return *this;
+    }
+
+    const decimal operator%(const decimal<Prec> &rhs) const {
+        int64 resultPayload;
+        resultPayload = this->m_value;
+        resultPayload %= rhs.m_value;
+        decimal<Prec> result;
+        result.m_value = resultPayload;
+        return result;
+    }
+
+    decimal & operator%=(const decimal<Prec> &rhs) {
+        int64 resultPayload;
+        resultPayload = this->m_value;
+        resultPayload %= rhs.m_value;
+        this->m_value = resultPayload;
+        return *this;
+    }
+
+#if DEC_TYPE_LEVEL >= 1
+    template<int Prec2>
+    typename std::enable_if<Prec >= Prec2, decimal>::type
+    operator%(const decimal<Prec2> &rhs) const {
+        int64 rhsInThisPrec = rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
+        int64 resultPayload = this->m_value;
+        resultPayload %= rhsInThisPrec;
+        decimal<Prec> result;
+        result.m_value = resultPayload;
+        return result;
+    }
+
+    template<int Prec2>
+    typename std::enable_if<Prec >= Prec2, decimal &>::type
+    operator%=(const decimal<Prec2> &rhs) {
+        int64 rhsInThisPrec = rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
+        int64 resultPayload = this->m_value;
+        resultPayload %= rhsInThisPrec;
+        this->m_value = resultPayload;
+        return *this;
+    }
+#endif
+
+#if DEC_TYPE_LEVEL > 1
+    template<int Prec2>
+    typename std::enable_if<Prec < Prec2, decimal>::type
+    operator%(const decimal<Prec2> &rhs) const {
+        int64 thisInRhsPrec = m_value * DecimalFactorDiff<Prec2 - Prec>::value;
+        int64 resultPayload = thisInRhsPrec % rhs.getUnbiased();
+        resultPayload /= DecimalFactorDiff<Prec2 - Prec>::value;
+        decimal<Prec> result;
+        result.m_value = resultPayload;
+        return result;
+    }
+
+    template<int Prec2>
+    typename std::enable_if<Prec < Prec2, decimal>::type
+    operator%=(const decimal<Prec2> &rhs) {
+        int64 thisInRhsPrec = m_value * DecimalFactorDiff<Prec2 - Prec>::value;
+        int64 resultPayload = thisInRhsPrec % rhs.getUnbiased();
+        resultPayload /= DecimalFactorDiff<Prec2 - Prec>::value;
+        this->m_value = resultPayload;
+        return *this;
+    }
+#endif
+
     /// Returns integer indicating sign of value
     /// -1 if value is < 0
     /// +1 if value is > 0
@@ -1147,6 +1221,45 @@ template<int Prec2>
             return *this;
         else
             return (decimal<Prec>(0) - *this);
+    }
+
+    decimal<Prec> trunc() const {
+        int64 beforeValue, afterValue;
+        afterValue = m_value % DecimalFactor<Prec>::value;
+        beforeValue = (m_value - afterValue);
+        decimal<Prec> result;
+        result.m_value = beforeValue;
+        return result;
+    }
+
+    decimal<Prec> floor() const {
+        int64 beforeValue, afterValue;
+        afterValue = m_value % DecimalFactor<Prec>::value;
+        beforeValue = (m_value - afterValue);
+
+        if (afterValue < 0) beforeValue -= DecimalFactor<Prec>::value;
+
+        decimal<Prec> result;
+        result.m_value = beforeValue;
+        return result;
+    }
+
+    decimal<Prec> ceil() const {
+        int64 beforeValue, afterValue;
+        afterValue = m_value % DecimalFactor<Prec>::value;
+        beforeValue = (m_value - afterValue);
+
+        if (afterValue > 0) beforeValue +=  DecimalFactor<Prec>::value;
+        decimal<Prec> result;
+        result.m_value = beforeValue;
+        return result;
+    }
+
+    decimal<Prec> round() const {
+        int64 resultPayload;
+        RoundPolicy::div_rounded(resultPayload, this->m_value, DecimalFactor<Prec>::value);
+        decimal<Prec> result(resultPayload);
+        return result;
     }
 
     /// returns value rounded to integer using active rounding policy
@@ -1315,6 +1428,10 @@ protected:
             return -value;
         else
             return value;
+    }
+
+    static int sign(int64 value) {
+        return (value > 0) ? 1 : ((value < 0) ? -1 : 0);
     }
 protected:
     dec_storage_t m_value;
