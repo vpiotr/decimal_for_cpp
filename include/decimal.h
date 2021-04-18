@@ -4,8 +4,8 @@
 //              operations on currency values.
 // Author:      Piotr Likus
 // Created:     03/01/2011
-// Last change: 23/09/2018
-// Version:     1.16
+// Last change: 18/04/2021
+// Version:     1.18
 // Licence:     BSD
 /////////////////////////////////////////////////////////////////////////////
 
