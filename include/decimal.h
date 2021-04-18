@@ -1090,6 +1090,25 @@ template<int Prec2>
         return *this;
     }
 
+#if DEC_TYPE_LEVEL == 1
+    template<int Prec2>
+    typename std::enable_if<Prec >= Prec2, decimal>::type
+    & operator/=(const decimal<Prec2> &rhs) {
+        m_value = dec_utils<RoundPolicy>::multDiv(m_value,
+                DecimalFactor<Prec2>::value, rhs.getUnbiased());
+
+        return *this;
+    }
+#elif DEC_TYPE_LEVEL > 1
+    template<int Prec2>
+    decimal & operator/=(const decimal<Prec2> &rhs) {
+        m_value = dec_utils<RoundPolicy>::multDiv(m_value,
+                                                  DecimalFactor<Prec2>::value, rhs.getUnbiased());
+
+        return *this;
+    }
+#endif
+
     template <typename T>
     const decimal operator%(T n) const {
         return *this % static_cast<decimal>(n);
@@ -1171,25 +1190,6 @@ template<int Prec2>
     int sign() const {
         return (m_value > 0) ? 1 : ((m_value < 0) ? -1 : 0);
     }
-
-#if DEC_TYPE_LEVEL == 1
-    template<int Prec2>
-    typename std::enable_if<Prec >= Prec2, decimal>::type
-    & operator/=(const decimal<Prec2> &rhs) {
-        m_value = dec_utils<RoundPolicy>::multDiv(m_value,
-                DecimalFactor<Prec2>::value, rhs.getUnbiased());
-
-        return *this;
-    }
-#elif DEC_TYPE_LEVEL > 1
-    template<int Prec2>
-    decimal & operator/=(const decimal<Prec2> &rhs) {
-        m_value = dec_utils<RoundPolicy>::multDiv(m_value,
-                DecimalFactor<Prec2>::value, rhs.getUnbiased());
-
-        return *this;
-    }
-#endif
 
     double getAsDouble() const {
         return static_cast<double>(m_value) / getPrecFactorDouble();
