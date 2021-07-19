@@ -66,7 +66,14 @@
 #else
 #include <stdint.h>
 #endif // defined
+
 #endif // DEC_NO_CPP11
+
+#ifdef DEC_NO_CPP11
+#define DEC_OVERRIDE
+#else
+#define DEC_OVERRIDE override
+#endif
 
 #if (DEC_ALLOW_SPACESHIP_OPER == 1) && (__cplusplus > 201703L)
 #define DEC_USE_SPACESHIP_OPER 1
@@ -98,6 +105,26 @@
 // <--
 
 namespace DEC_NAMESPACE {
+
+#ifdef DEC_NO_CPP11
+    template<bool Condition, class T>
+    struct enable_if_type {
+        typedef T type;
+    };
+
+    template<class T>
+    struct enable_if_type<false, T> {
+    };
+
+    template<bool condition, class T>
+    struct enable_if: public enable_if_type<condition, T> {
+    };
+
+#define ENABLE_IF dec::enable_if
+#else
+#define ENABLE_IF std::enable_if
+#endif
+
 
 // ----------------------------------------------------------------------------
 // Simple type definitions
@@ -673,7 +700,7 @@ public:
         init(value);
     }
 #ifdef DEC_HANDLE_LONG
-    explicit decimal(long value) {
+    explicit decimal(long int value) {
         init(value);
     }
 #endif
@@ -722,7 +749,7 @@ public:
 
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
-    typename std::enable_if<Prec >= Prec2, decimal>::type
+    typename ENABLE_IF<Prec >= Prec2, decimal>::type
     & operator=(const decimal<Prec2> &rhs) {
         m_value = rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return *this;
@@ -842,7 +869,7 @@ public:
 
 #if DEC_TYPE_LEVEL == 1
 template<int Prec2>
-    const typename std::enable_if<Prec >= Prec2, decimal>::type
+    const typename ENABLE_IF<Prec >= Prec2, decimal>::type
     operator+(const decimal<Prec2> &rhs) const {
         decimal result = *this;
         result.m_value += rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
@@ -879,7 +906,7 @@ template<int Prec2>
 
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
-    typename std::enable_if<Prec >= Prec2, decimal>::type
+    typename ENABLE_IF<Prec >= Prec2, decimal>::type
     & operator+=(const decimal<Prec2> &rhs) {
         m_value += rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return *this;
@@ -924,7 +951,7 @@ template<int Prec2>
 
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
-    const typename std::enable_if<Prec >= Prec2, decimal>::type
+    const typename ENABLE_IF<Prec >= Prec2, decimal>::type
     operator-(const decimal<Prec2> &rhs) const {
         decimal result = *this;
         result.m_value -= rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
@@ -961,7 +988,7 @@ template<int Prec2>
 
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
-    typename std::enable_if<Prec >= Prec2, decimal>::type
+    typename ENABLE_IF<Prec >= Prec2, decimal>::type
     & operator-=(const decimal<Prec2> &rhs) {
         m_value -= rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return *this;
@@ -997,7 +1024,7 @@ template<int Prec2>
 
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
-    const typename std::enable_if<Prec >= Prec2, decimal>::type
+    const typename ENABLE_IF<Prec >= Prec2, decimal>::type
     operator*(const decimal<Prec2>& rhs) const {
         decimal result = *this;
         result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
@@ -1028,7 +1055,7 @@ template<int Prec2>
 
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
-    typename std::enable_if<Prec >= Prec2, decimal>::type
+    typename ENABLE_IF<Prec >= Prec2, decimal>::type
     & operator*=(const decimal<Prec2>& rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.getUnbiased(),
                 DecimalFactor<Prec2>::value);
@@ -1059,7 +1086,7 @@ template<int Prec2>
 
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
-    const typename std::enable_if<Prec >= Prec2, decimal>::type
+    const typename ENABLE_IF<Prec >= Prec2, decimal>::type
     operator/(const decimal<Prec2>& rhs) const {
         decimal result = *this;
         result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
@@ -1092,7 +1119,7 @@ template<int Prec2>
 
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
-    typename std::enable_if<Prec >= Prec2, decimal>::type
+    typename ENABLE_IF<Prec >= Prec2, decimal>::type
     & operator/=(const decimal<Prec2> &rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value,
                 DecimalFactor<Prec2>::value, rhs.getUnbiased());
@@ -1139,7 +1166,7 @@ template<int Prec2>
 
 #if DEC_TYPE_LEVEL >= 1
     template<int Prec2>
-    typename std::enable_if<Prec >= Prec2, decimal>::type
+    typename ENABLE_IF<Prec >= Prec2, decimal>::type
     operator%(const decimal<Prec2> &rhs) const {
         int64 rhsInThisPrec = rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         int64 resultPayload = this->m_value;
@@ -1150,7 +1177,7 @@ template<int Prec2>
     }
 
     template<int Prec2>
-    typename std::enable_if<Prec >= Prec2, decimal &>::type
+    typename ENABLE_IF<Prec >= Prec2, decimal &>::type
     operator%=(const decimal<Prec2> &rhs) {
         int64 rhsInThisPrec = rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         int64 resultPayload = this->m_value;
@@ -1162,7 +1189,7 @@ template<int Prec2>
 
 #if DEC_TYPE_LEVEL > 1
     template<int Prec2>
-    typename std::enable_if<Prec < Prec2, decimal>::type
+    typename ENABLE_IF<Prec < Prec2, decimal>::type
     operator%(const decimal<Prec2> &rhs) const {
         int64 thisInRhsPrec = m_value * DecimalFactorDiff<Prec2 - Prec>::value;
         int64 resultPayload = thisInRhsPrec % rhs.getUnbiased();
@@ -1173,7 +1200,7 @@ template<int Prec2>
     }
 
     template<int Prec2>
-    typename std::enable_if<Prec < Prec2, decimal>::type
+    typename ENABLE_IF<Prec < Prec2, decimal>::type
     operator%=(const decimal<Prec2> &rhs) {
         int64 thisInRhsPrec = m_value * DecimalFactorDiff<Prec2 - Prec>::value;
         int64 resultPayload = thisInRhsPrec % rhs.getUnbiased();
@@ -1376,7 +1403,7 @@ protected:
     }
 
 #ifdef DEC_HANDLE_LONG
-    void init(long value) {
+    void init(long int value) {
         m_value = DecimalFactor<Prec>::value * value;
     }
 #endif
@@ -1599,19 +1626,19 @@ decimal<Prec, RoundPolicy> decimal_cast(const char (&arg)[N]) {
             return *this;
         }
 
-        char decimal_point() const override {
+        char decimal_point() const DEC_OVERRIDE {
             return m_decimal_point;
         }
 
-        char thousands_sep() const override {
+        char thousands_sep() const DEC_OVERRIDE {
             return m_thousands_sep;
         }
 
-        bool thousands_grouping() const override {
+        bool thousands_grouping() const DEC_OVERRIDE {
             return m_thousands_grouping;
         }
 
-        std::string grouping() const override {
+        std::string grouping() const DEC_OVERRIDE {
             return m_grouping;
         }
 
