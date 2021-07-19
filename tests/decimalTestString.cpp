@@ -91,3 +91,21 @@ BOOST_AUTO_TEST_CASE(decimalFromStringWithFormat) {
         BOOST_CHECK_EQUAL(d2a, d2b);
 }
 
+struct italiano_separators : std::numpunct<char> {
+    char do_thousands_sep()   const { return '.'; }  // separate with dot
+    std::string do_grouping() const { return "\3"; } // groups of 3 digits
+    char do_decimal_point()   const { return ','; }  // separate with comma
+};
+
+BOOST_AUTO_TEST_CASE(decimalItalianoParsing) {
+    std::locale new_locale(std::cout.getloc(), new italiano_separators);
+    std::locale prior_locale = std::locale::global(new_locale);
+    std::stringstream ss("1.234,56");
+    dec::decimal<2> ret;
+    dec::fromStream(ss, ret);
+    std::locale::global(prior_locale);
+    dec::DEC_INT64 beforeValue, afterValue;
+    ret.unpack(beforeValue, afterValue);
+    BOOST_CHECK_EQUAL(beforeValue, 1234);
+    BOOST_CHECK_EQUAL(afterValue, 56);
+}

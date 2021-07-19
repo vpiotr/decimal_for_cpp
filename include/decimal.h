@@ -1661,7 +1661,7 @@ decimal<Prec, RoundPolicy> decimal_cast(const char (&arg)[N]) {
     };
 
     template<typename StreamType>
-    basic_decimal_format format_from_stream(StreamType &stream) {
+    decimal_format format_from_stream(StreamType &stream) {
         using namespace std;
         const numpunct<char> *facet =
                 has_facet<numpunct<char> >(stream.getloc()) ?
