@@ -71,8 +71,10 @@
 
 #ifdef DEC_NO_CPP11
 #define DEC_OVERRIDE
+#define DEC_CONSTEXPR
 #else
 #define DEC_OVERRIDE override
+#define DEC_CONSTEXPR constexpr
 #endif
 
 #if (DEC_ALLOW_SPACESHIP_OPER == 1) && (__cplusplus > 201703L)
@@ -690,36 +692,36 @@ public:
         init(src);
     }
 #else
-    decimal() noexcept : m_value(0) {}
-    decimal(const decimal &src) = default;
+    DEC_CONSTEXPR decimal() noexcept : m_value(0) {}
+    DEC_CONSTEXPR decimal(const decimal &src) = default;
 #endif
-    explicit decimal(uint value) {
+    explicit DEC_CONSTEXPR decimal(uint value) {
         init(value);
     }
-    explicit decimal(int value) {
+    explicit DEC_CONSTEXPR decimal(int value) {
         init(value);
     }
 #ifdef DEC_HANDLE_LONG
-    explicit decimal(long int value) {
+    explicit DEC_CONSTEXPR decimal(long int value) {
         init(value);
     }
 #endif
-    explicit decimal(int64 value) {
+    explicit DEC_CONSTEXPR decimal(int64 value) {
         init(value);
     }
-    explicit decimal(xdouble value) {
+    explicit DEC_CONSTEXPR decimal(xdouble value) {
         init(value);
     }
-    explicit decimal(double value) {
+    explicit DEC_CONSTEXPR decimal(double value) {
         init(value);
     }
-    explicit decimal(float value) {
+    explicit DEC_CONSTEXPR decimal(float value) {
         init(value);
     }
-    explicit decimal(int64 value, int64 precFactor) {
+    explicit DEC_CONSTEXPR decimal(int64 value, int64 precFactor) {
         initWithPrec(value, precFactor);
     }
-    explicit decimal(const std::string &value) {
+    explicit DEC_CONSTEXPR decimal(const std::string &value) {
         fromString(value, *this);
     }
 
