@@ -6,7 +6,12 @@
 
     BOOST_AUTO_TEST_CASE(decimalWithExponent)
 {
-    // build positive values
+    BOOST_CHECK_EQUAL( dec::decimal<0>::buildWithExponent(1,-19), dec::decimal<0>("0"));
+    BOOST_CHECK_EQUAL( dec::decimal<0>::buildWithExponent(1,-20), dec::decimal<0>("0"));
+    BOOST_CHECK_EQUAL( dec::decimal<0>::buildWithExponent(1,-21), dec::decimal<0>("0"));
+    BOOST_CHECK_EQUAL( dec::decimal<0>::buildWithExponent(1,-22), dec::decimal<0>("0"));
+    BOOST_CHECK_EQUAL( dec::decimal<0>::buildWithExponent(1,-23), dec::decimal<0>("0"));
+    
     BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, 0), dec::decimal<4>("11"));
     BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, 2), dec::decimal<4>("1100"));
     BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, -2), dec::decimal<4>("0.11"));

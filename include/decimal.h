@@ -758,8 +758,12 @@ public:
     template<int Prec2>
     decimal & operator=(const decimal<Prec2> &rhs) {
         if (Prec2 > Prec) {
-            RoundPolicy::div_rounded(m_value, rhs.getUnbiased(),
-                    DecimalFactorDiff<Prec2 - Prec>::value);
+            int64_t factor = DecimalFactorDiff<Prec2 - Prec>::value;
+            if ( factor!=0 ) {
+                RoundPolicy::div_rounded(m_value, rhs.getUnbiased(), factor );
+            } else {
+                m_value = 0;
+            }
         } else {
             m_value = rhs.getUnbiased()
                     * DecimalFactorDiff<Prec - Prec2>::value;
@@ -880,10 +884,12 @@ template<int Prec2>
     const decimal operator+(const decimal<Prec2> &rhs) const {
         decimal result = *this;
         if (Prec2 > Prec) {
-            int64 val;
-            RoundPolicy::div_rounded(val, rhs.getUnbiased(),
-                    DecimalFactorDiff<Prec2 - Prec>::value);
-            result.m_value += val;
+            int64 factor = DecimalFactorDiff<Prec2 - Prec>::value;
+            if ( factor!=0 ) {
+                int64 val;
+                RoundPolicy::div_rounded(val, rhs.getUnbiased(), factor);
+                result.m_value += val;
+            }
         } else {
             result.m_value += rhs.getUnbiased()
                     * DecimalFactorDiff<Prec - Prec2>::value;
@@ -915,10 +921,12 @@ template<int Prec2>
     template<int Prec2>
     decimal & operator+=(const decimal<Prec2> &rhs) {
         if (Prec2 > Prec) {
-            int64 val;
-            RoundPolicy::div_rounded(val, rhs.getUnbiased(),
-                    DecimalFactorDiff<Prec2 - Prec>::value);
-            m_value += val;
+            int64 factor = DecimalFactorDiff<Prec2 - Prec>::value;
+            if ( factor!=0 ) {
+                int64 val;
+                RoundPolicy::div_rounded(val, rhs.getUnbiased(), factor );
+                m_value += val;
+            }
         } else {
             m_value += rhs.getUnbiased()
                     * DecimalFactorDiff<Prec - Prec2>::value;
@@ -962,10 +970,12 @@ template<int Prec2>
     const decimal operator-(const decimal<Prec2> &rhs) const {
         decimal result = *this;
         if (Prec2 > Prec) {
-            int64 val;
-            RoundPolicy::div_rounded(val, rhs.getUnbiased(),
-                    DecimalFactorDiff<Prec2 - Prec>::value);
-            result.m_value -= val;
+            int64 factor = DecimalFactorDiff<Prec2 - Prec>::value;
+            if ( factor != 0 ) {
+                int64 val;
+                RoundPolicy::div_rounded(val, rhs.getUnbiased(), factor );
+                result.m_value -= val;
+            }
         } else {
             result.m_value -= rhs.getUnbiased()
                     * DecimalFactorDiff<Prec - Prec2>::value;
@@ -997,10 +1007,12 @@ template<int Prec2>
     template<int Prec2>
     decimal & operator-=(const decimal<Prec2> &rhs) {
         if (Prec2 > Prec) {
-            int64 val;
-            RoundPolicy::div_rounded(val, rhs.getUnbiased(),
-                    DecimalFactorDiff<Prec2 - Prec>::value);
-            m_value -= val;
+            int64 factor = DecimalFactorDiff<Prec2 - Prec>::value;
+            if ( factor !=0 ) {
+                int64 val;
+                RoundPolicy::div_rounded(val, rhs.getUnbiased(), factor );
+                m_value -= val;
+            }
         } else {
             m_value -= rhs.getUnbiased()
                     * DecimalFactorDiff<Prec - Prec2>::value;
@@ -1283,17 +1295,25 @@ template<int Prec2>
     }
 
     decimal<Prec> round() const {
-        int64 resultPayload;
-        RoundPolicy::div_rounded(resultPayload, this->m_value, DecimalFactor<Prec>::value);
-        decimal<Prec> result(resultPayload);
-        return result;
+        int64 factor = DecimalFactor<Prec>::value;
+        if ( factor != 0 ) {
+            int64 resultPayload;
+            RoundPolicy::div_rounded(resultPayload, this->m_value, factor );
+            decimal<Prec> result(resultPayload);
+            return result;
+        }
+        return decimal<Prec>(0);
     }
 
     /// returns value rounded to integer using active rounding policy
     int64 getAsInteger() const {
-        int64 result;
-        RoundPolicy::div_rounded(result, m_value, DecimalFactor<Prec>::value);
-        return result;
+        int64 factor = DecimalFactor<Prec>::value;
+        if ( factor != 0 ) {
+            int64 result;
+            RoundPolicy::div_rounded(result, m_value, factor );
+            return result;
+        }
+        return 0;
     }
 
     /// overwrites internal value with integer
@@ -1352,13 +1372,11 @@ template<int Prec2>
         int exponentForPack = exponent + Prec;
 
         if (exponentForPack < 0) {
-            int64 newValue;
-
-            if (!RoundPolicy::div_rounded(newValue, mantissa,
-                    dec_utils<RoundPolicy>::pow10(-exponentForPack))) {
-                newValue = 0;
+            int64 newValue = 0;
+            int64 exponent = dec_utils<RoundPolicy>::pow10(-exponentForPack);
+            if (exponent!=0) {
+                RoundPolicy::div_rounded(newValue, mantissa,exponent);
             }
-
             m_value = newValue;
         } else {
             m_value = mantissa * dec_utils<RoundPolicy>::pow10(exponentForPack);
@@ -1436,7 +1454,14 @@ protected:
         }
         else {
             // conversion
-            RoundPolicy::div_rounded(m_value, value, precFactor / ownFactor);
+            int64 newValue = 0;
+            if ( (precFactor != 0) && (ownFactor != 0) ) {
+                int64_t factor = precFactor/ownFactor;
+                if ( factor != 0 ) {
+                    RoundPolicy::div_rounded(newValue, value, factor );
+                }
+            }
+            m_value = newValue;
         }
     }
 
