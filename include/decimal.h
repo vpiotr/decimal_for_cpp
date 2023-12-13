@@ -1705,8 +1705,8 @@ decimal<Prec, RoundPolicy> decimal_cast(const char (&arg)[N]) {
             output << "-";
         }
 
+        std::locale oldloc = output.getloc();
         if (format.thousands_grouping() && format.change_thousands_if_needed()) {
-            std::locale oldloc = output.getloc();
             output.imbue( std::locale( std::locale::classic(), new decimal_format_punct(format) ) );
             output << before;
             output.imbue(oldloc);
@@ -1715,9 +1715,11 @@ decimal<Prec, RoundPolicy> decimal_cast(const char (&arg)[N]) {
         }
 
         if (arg.getDecimalPoints() > 0) {
+            output.imbue(std::locale::classic());
             output << format.decimal_point();
             output << setw(arg.getDecimalPoints()) << setfill('0') << right
                    << after;
+            output.imbue(oldloc);
         }
     }
 
