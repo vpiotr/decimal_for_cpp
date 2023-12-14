@@ -44,5 +44,15 @@
     BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(temp, 111215, -5), dec::decimal<4>("1.1122"));
     BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(temp, -111213, -5), dec::decimal<4>("-1.1121"));
     BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(temp, -111215, -5), dec::decimal<4>("-1.1122"));
+
+    // check overflow
+    BOOST_CHECK_EQUAL(dec::decimal<0>::buildWithExponent(1, 23), dec::decimal<0>("0"));
+    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(1, 23), dec::decimal<4>("0"));
+    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(1, 19), dec::decimal<4>("0"));
+    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(1, 15), dec::decimal<4>("0"));
+
+    // check underflow
+    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(1, -19), dec::decimal<4>("0"));
+    BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(1, -15), dec::decimal<4>("0"));
 }
 

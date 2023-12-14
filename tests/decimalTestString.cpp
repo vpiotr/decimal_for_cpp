@@ -109,3 +109,92 @@ BOOST_AUTO_TEST_CASE(decimalItalianoParsing) {
     BOOST_CHECK_EQUAL(beforeValue, 1234);
     BOOST_CHECK_EQUAL(afterValue, 56);
 }
+
+BOOST_AUTO_TEST_CASE(decimalToStringWithGlobalCLocale) {
+    std::locale prior_cout_locale = std::cout.getloc();
+    std::locale prior_locale = std::locale::global(std::locale("C"));
+
+    dec::decimal<7> value = dec::decimal<7>::buildWithExponent(1234567890987L, -7);
+    std::string expected = "123456.7890987";
+
+    BOOST_CHECK_EQUAL(dec::toString(value), expected);
+
+    std::cout.imbue( prior_cout_locale );
+    std::locale::global(prior_locale);
+}
+
+BOOST_AUTO_TEST_CASE(decimalToStringWithGlobalItLocale) {
+    std::locale prior_cout_locale = std::cout.getloc();
+    std::locale italiano_locale(std::cout.getloc(), new italiano_separators);
+    std::locale prior_locale = std::locale::global(italiano_locale);
+
+    dec::decimal<7> value = dec::decimal<7>::buildWithExponent(1234567890987L, -7);
+    std::string expected = "123.456,7890987";
+
+    BOOST_CHECK_EQUAL(dec::toString(value), expected);
+
+    std::cout.imbue(prior_cout_locale);
+    std::locale::global(prior_locale);
+}
+
+BOOST_AUTO_TEST_CASE(decimalToStringWithGlobalItLocaleAndProvidedFormat) {
+    std::locale prior_cout_locale = std::cout.getloc();
+    std::locale italiano_locale(std::cout.getloc(), new italiano_separators);
+    std::locale prior_locale = std::locale::global(italiano_locale);
+
+    dec::decimal_format format('.', '\0');
+
+    dec::decimal<7> value = dec::decimal<7>::buildWithExponent(1234567890987L, -7);
+    std::string expected = "123456.7890987";
+
+    BOOST_CHECK_EQUAL(dec::toString(value, format), expected);
+
+    std::cout.imbue(prior_cout_locale);
+    std::locale::global(prior_locale);
+}
+
+BOOST_AUTO_TEST_CASE(decimalFromStringWithGlobalCLocale) {
+    std::locale prior_cout_locale = std::cout.getloc();
+    std::locale prior_locale = std::locale::global(std::locale("C"));
+
+    std::string value = "123456.7890987";
+    dec::decimal<7> expected = dec::decimal<7>::buildWithExponent(1234567890987L, -7);
+    dec::decimal<7> d7(value);
+
+    BOOST_CHECK_EQUAL(d7, expected);
+
+    std::cout.imbue(prior_cout_locale);
+    std::locale::global(prior_locale);
+}
+
+BOOST_AUTO_TEST_CASE(decimalFromStringWithGlobalItLocale) {
+    std::locale prior_cout_locale = std::cout.getloc();
+    std::locale italiano_locale(std::cout.getloc(), new italiano_separators);
+    std::locale prior_locale = std::locale::global(italiano_locale);
+
+    std::string value = "123.456,7890987";
+    dec::decimal<7> expected = dec::decimal<7>::buildWithExponent(1234567890987L, -7);
+    dec::decimal<7> d7(value);
+
+    BOOST_CHECK_EQUAL(d7, expected);
+
+    std::cout.imbue(prior_cout_locale);
+    std::locale::global(prior_locale);
+}
+
+BOOST_AUTO_TEST_CASE(decimalFromStringWithGlobalItLocaleAndProvidedFormat) {
+    std::locale prior_cout_locale = std::cout.getloc();
+    std::locale italiano_locale(std::cout.getloc(), new italiano_separators);
+    std::locale prior_locale = std::locale::global(italiano_locale);
+
+    dec::decimal_format cformat('.', '\0');
+
+    std::string value = "123456.7890987";
+    dec::decimal<7> expected = dec::decimal<7>::buildWithExponent(1234567890987L, -7);
+    dec::decimal<7> d7(value, cformat);
+
+    BOOST_CHECK_EQUAL(d7, expected);
+
+    std::cout.imbue(prior_cout_locale);
+    std::locale::global(prior_locale);
+}

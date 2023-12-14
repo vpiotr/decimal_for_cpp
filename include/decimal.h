@@ -172,6 +172,7 @@ typedef xdouble cross_float;
 // ----------------------------------------------------------------------------
 // Forward class definitions
 // ----------------------------------------------------------------------------
+class basic_decimal_format;
 
 // ----------------------------------------------------------------------------
 // Constants
@@ -721,6 +722,10 @@ public:
     }
     explicit decimal(const std::string &value) {
         fromString(value, *this);
+    }
+
+    explicit decimal(const std::string &value, const basic_decimal_format &format) {
+        fromString(value, format, *this);
     }
 
 #ifdef DEC_NO_CPP11
