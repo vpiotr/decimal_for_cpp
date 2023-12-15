@@ -1687,7 +1687,7 @@ decimal<Prec, RoundPolicy> decimal_cast(const char (&arg)[N]) {
     /// bbbb is stream of digits before decimal point
     /// aaaa is stream of digits after decimal point
     template<class decimal_type, typename StreamType>
-    void toStream(const decimal_type &arg, const basic_decimal_format &format, StreamType &output) {
+    void toStream(const decimal_type &arg, const basic_decimal_format &format, StreamType &output, bool formatFromStream = false) {
         using namespace std;
 
         int64 before, after;
@@ -1711,7 +1711,7 @@ decimal<Prec, RoundPolicy> decimal_cast(const char (&arg)[N]) {
         }
 
         std::locale oldloc = output.getloc();
-        if (format.thousands_grouping() && format.change_thousands_if_needed()) {
+        if (!formatFromStream || (format.thousands_grouping() && format.change_thousands_if_needed())) {
             output.imbue( std::locale( std::locale::classic(), new decimal_format_punct(format) ) );
             output << before;
             output.imbue(oldloc);
@@ -1730,7 +1730,7 @@ decimal<Prec, RoundPolicy> decimal_cast(const char (&arg)[N]) {
 
     template<class decimal_type, typename StreamType>
     void toStream(const decimal_type &arg, StreamType &output) {
-        toStream(arg, format_from_stream(output), output);
+        toStream(arg, format_from_stream(output), output, true);
     }
 
 namespace details {
