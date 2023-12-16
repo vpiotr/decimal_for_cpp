@@ -4,7 +4,7 @@
 
 #include "decimal.h"
 
-    BOOST_AUTO_TEST_CASE(decimalMultiplyPrec)
+BOOST_AUTO_TEST_CASE(decimalMultiplyPrec)
 {
     // check mult prec
     BOOST_CHECK_EQUAL(dec::decimal<4>("0.0001") * dec::decimal<4>("1.0000"), dec::decimal<4>("0.0001"));
@@ -41,7 +41,7 @@
                       dec::decimal<6>("1894327894.925618"));
 }
 
-    BOOST_AUTO_TEST_CASE(decimalMultiplyInt)
+BOOST_AUTO_TEST_CASE(decimalMultiplyInt)
 {
     BOOST_CHECK_EQUAL(dec::decimal<4>("0.0001") * 2, dec::decimal<4>("0.0002"));
     BOOST_CHECK_EQUAL(dec::decimal<4>("0.1001") * 3, dec::decimal<4>("0.3003"));

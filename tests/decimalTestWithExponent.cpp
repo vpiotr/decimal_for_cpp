@@ -4,7 +4,7 @@
 
 #include "decimal.h"
 
-    BOOST_AUTO_TEST_CASE(decimalWithExponent)
+BOOST_AUTO_TEST_CASE(decimalWithExponent)
 {
     // build positive values
     BOOST_CHECK_EQUAL(dec::decimal<4>::buildWithExponent(11, 0), dec::decimal<4>("11"));

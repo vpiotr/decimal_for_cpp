@@ -4,7 +4,7 @@
 
 #include "decimal.h"
 
-    BOOST_AUTO_TEST_CASE(decimalArithmetic)
+BOOST_AUTO_TEST_CASE(decimalArithmetic)
 {
     dec::decimal<2> balance;
     dec::decimal<2> a(123);

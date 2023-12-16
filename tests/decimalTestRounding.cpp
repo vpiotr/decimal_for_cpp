@@ -4,7 +4,7 @@
 
 #include "decimal.h"
 
-    BOOST_AUTO_TEST_CASE(decimalRounding)
+BOOST_AUTO_TEST_CASE(decimalRounding)
 {
     dec::decimal<2> balance;
 
@@ -58,7 +58,7 @@
     BOOST_CHECK_EQUAL(longDec1, longDec2);
 }
 
-    BOOST_AUTO_TEST_CASE(decimalDefRoundPolicy)
+BOOST_AUTO_TEST_CASE(decimalDefRoundPolicy)
 {
     using namespace dec;
     decimal<1, def_round_policy> a("0.5");
@@ -70,7 +70,7 @@
     BOOST_CHECK(c == expected);
 }
 
-    BOOST_AUTO_TEST_CASE(decimalNoRoundPolicy)
+BOOST_AUTO_TEST_CASE(decimalNoRoundPolicy)
 {
     using namespace dec;
     decimal<1, null_round_policy> a("0.5");
@@ -127,7 +127,7 @@ private:
     std::string m_name;
 };
 
-    BOOST_AUTO_TEST_CASE(decimalRoundingPolicyOther)
+BOOST_AUTO_TEST_CASE(decimalRoundingPolicyOther)
 {
     using namespace dec;
     {

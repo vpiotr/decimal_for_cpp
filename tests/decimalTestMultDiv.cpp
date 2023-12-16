@@ -16,7 +16,7 @@ public:
     }
 };
 
-    BOOST_AUTO_TEST_CASE(multDiv)
+BOOST_AUTO_TEST_CASE(multDiv)
 {
 
     {

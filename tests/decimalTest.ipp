@@ -20,7 +20,7 @@ std::string uint_to_string(unsigned int arg) {
     return (out.str());
 }
 
-    BOOST_AUTO_TEST_CASE(decimalAsInteger)
+BOOST_AUTO_TEST_CASE(decimalAsInteger)
 {
     // rounded value
     dec::decimal<6> a;
@@ -40,7 +40,7 @@ std::string uint_to_string(unsigned int arg) {
 }
 
 // test with values internally > 2^32
-    BOOST_AUTO_TEST_CASE(decimalMidOverflow)
+BOOST_AUTO_TEST_CASE(decimalMidOverflow)
 {
     dec::decimal<6> a;
     dec::decimal<6> b;
@@ -57,7 +57,7 @@ std::string uint_to_string(unsigned int arg) {
     BOOST_CHECK((c - expected).abs() < dec::decimal<6>("1.0"));
 }
 
-    BOOST_AUTO_TEST_CASE(decimalUnpack)
+BOOST_AUTO_TEST_CASE(decimalUnpack)
 {
     using namespace dec;
 
@@ -83,7 +83,7 @@ std::string uint_to_string(unsigned int arg) {
     BOOST_CHECK(after == 5121);
 }
 
-    BOOST_AUTO_TEST_CASE(decimalPack)
+BOOST_AUTO_TEST_CASE(decimalPack)
 {
     using namespace dec;
     decimal<4> d;
@@ -108,7 +108,7 @@ std::string uint_to_string(unsigned int arg) {
     BOOST_CHECK(d.pack_rounded<5>(1, 51211) == decimal<4>("1.5121"));
 }
 
-    BOOST_AUTO_TEST_CASE(decimalZeroPrec)
+BOOST_AUTO_TEST_CASE(decimalZeroPrec)
 {
     using namespace dec;
     decimal<0> d;
@@ -130,7 +130,7 @@ std::string uint_to_string(unsigned int arg) {
     BOOST_CHECK(d == decimal<0>(-2));
 }
 
-    BOOST_AUTO_TEST_CASE(decimalComparison)
+BOOST_AUTO_TEST_CASE(decimalComparison)
 {
     const double pi = 3.1415926;
     BOOST_CHECK_EQUAL(dec::decimal<8>(0.), 0);
@@ -151,7 +151,7 @@ std::string uint_to_string(unsigned int arg) {
     BOOST_CHECK(dec::decimal<8>(pi) != 3.0);
 }
 
-    BOOST_AUTO_TEST_CASE(decimalSign)
+BOOST_AUTO_TEST_CASE(decimalSign)
 {
     dec::decimal<4> d(-4.1234);
     BOOST_CHECK(d.sign() < 0);
@@ -169,7 +169,7 @@ std::string uint_to_string(unsigned int arg) {
     BOOST_CHECK(d.sign() == 0);
 }
 
-    BOOST_AUTO_TEST_CASE(decimalFloatConstructorHighPrec) {
+BOOST_AUTO_TEST_CASE(decimalFloatConstructorHighPrec) {
     dec::decimal<2> d1(3.1549999999999998);
     dec::decimal<2> d2("3.1549999999999998");
     BOOST_CHECK_EQUAL(d1, d2);
@@ -188,7 +188,7 @@ std::string uint_to_string(unsigned int arg) {
 }
 
 #ifndef DEC_NO_CPP11
-    BOOST_AUTO_TEST_CASE(trivialAndNoThrowConstructor) {
+BOOST_AUTO_TEST_CASE(trivialAndNoThrowConstructor) {
     BOOST_CHECK_EQUAL(std::is_trivial<dec::decimal<6>>::value, false);
 
     BOOST_CHECK_EQUAL(std::is_trivially_constructible<dec::decimal<6>>::value, false);

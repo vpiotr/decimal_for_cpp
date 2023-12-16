@@ -4,7 +4,7 @@
 
 #include "decimal.h"
 
-    BOOST_AUTO_TEST_CASE(decimalTypeLevel)
+BOOST_AUTO_TEST_CASE(decimalTypeLevel)
 {
     using namespace dec;
     dec::decimal<4> d4("-4.1234");

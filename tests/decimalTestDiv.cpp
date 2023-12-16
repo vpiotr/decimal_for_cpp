@@ -4,7 +4,7 @@
 
 #include "decimal.h"
 
-    BOOST_AUTO_TEST_CASE(decimalDivInt)
+BOOST_AUTO_TEST_CASE(decimalDivInt)
 {
     BOOST_CHECK_EQUAL(dec::decimal<4>("1.0001") / 2, dec::decimal<4>("0.5001"));
 #ifdef DEC_HANDLE_LONG

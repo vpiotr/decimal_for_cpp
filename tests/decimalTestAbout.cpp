@@ -5,7 +5,7 @@
 #include "decimal.h"
 
 
-    BOOST_AUTO_TEST_CASE(decimalAbout) {
+BOOST_AUTO_TEST_CASE(decimalAbout) {
     using namespace dec;
     using namespace std;
 
