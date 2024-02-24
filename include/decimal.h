@@ -44,6 +44,7 @@
 #include <iomanip>
 #include <sstream>
 #include <locale>
+#include <cmath>
 
 #ifndef DEC_TYPE_LEVEL
 #define DEC_TYPE_LEVEL 2

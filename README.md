@@ -7,11 +7,11 @@ Author: Piotr Likus
 
 Created: 03/01/2011
 
-Modified: 19/07/2021
+Modified: 24/02/2024
 
 Licence: BSD
 
-Version: 1.19
+Version: 1.20
 
 
 This data type is designed to perform calculation with on-fly  roundings
@@ -164,6 +164,11 @@ In order to test the library:
     # to execute specific runner
     ./test_runner
 
+    # to list all test cases during runner execution
+    ./test_runner --log_level=test_suite
+
+    # to execute tests via ctest
+    ctest -v
 
 # Other information
 For more examples please see \test directory.
@@ -181,7 +186,7 @@ http://www.doxygen.org/
 Tested compilers:
 
 - VS2019 Community (MSVC++ 14.2)
-- gcc 9.3.0
+- gcc 11.4.0
 
 Uses C++11 by default, define DEC_NO_CPP11 symbol if your compiler does not support this standard.
 To use custom namespace, define DEC_NAMESPACE symbol which should contain your target namespace for decimal type.

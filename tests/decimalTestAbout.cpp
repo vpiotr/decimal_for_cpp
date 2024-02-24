@@ -1,9 +1,10 @@
 //
-// Test features mentioned in project README
+// Demo of features mentioned in project README
 // Created by piotr on 7/19/21.
 //
 
 #include "decimal.h"
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(decimalAbout) {
     using namespace dec;

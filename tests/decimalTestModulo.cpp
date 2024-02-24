@@ -3,6 +3,7 @@
 //
 
 #include "decimal.h"
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(testModOperInt) {
         BOOST_CHECK_EQUAL(dec::decimal_cast<2>(15) % 4, 3);

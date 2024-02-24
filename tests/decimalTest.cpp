@@ -8,6 +8,9 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "decimal.h"
+
+
+#include <boost/test/unit_test.hpp>
 #include <boost/integer_traits.hpp>
 
 #ifndef DEC_NO_CPP11

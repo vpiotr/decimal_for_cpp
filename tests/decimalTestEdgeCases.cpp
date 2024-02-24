@@ -3,7 +3,15 @@
 //
 
 #include "decimal.h"
-#include "decimalTestUtils.cpp"
+#include "decimalTestUtils.h"
+#include <boost/test/unit_test.hpp>
+
+#include <boost/integer_traits.hpp>
+
+#ifndef DEC_NO_CPP11
+#include <type_traits>
+#endif
+
 
 BOOST_AUTO_TEST_CASE(decimalHighEndVals)
         {

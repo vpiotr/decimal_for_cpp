@@ -15,7 +15,23 @@ if(BUILD_TESTING)
 
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS} include)
-        add_executable(test_runner include/decimal.h tests/runner.cpp)
+        add_executable(test_runner include/decimal.h
+                tests/runner.cpp
+                tests/decimalTest.cpp
+                tests/decimalTestAbout.cpp
+                tests/decimalTestArithmetic.cpp
+                tests/decimalTestDiv.cpp
+                tests/decimalTestEdgeCases.cpp
+                tests/decimalTestModulo.cpp
+                tests/decimalTestMult.cpp
+                tests/decimalTestMultDiv.cpp
+                tests/decimalTestRounding.cpp
+                tests/decimalTestRoundOth.cpp
+                tests/decimalTestString.cpp
+                tests/decimalTestTypeLevel.cpp
+                tests/decimalTestUtils.cpp
+                tests/decimalTestWithExponent.cpp
+                tests/decimalTestUtils.h)
         target_include_directories(test_runner PRIVATE ${BOOST_INCLUDE_DIRS})
     endif()
 

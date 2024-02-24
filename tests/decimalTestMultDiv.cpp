@@ -3,6 +3,7 @@
 //
 
 #include "decimal.h"
+#include <boost/test/unit_test.hpp>
 
 class mult_div_tester {
 public:
