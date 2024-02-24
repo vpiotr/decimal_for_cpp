@@ -1,7 +1,7 @@
 # About     
 Decimal data type support, for COBOL-like fixed-point operations on currency/money values.
 
-![decimal_for_cpp](https://github.com/vpiotr/decimal_for_cpp/workflows/decimal_for_cpp/badge.svg?branch=master)
+![decimal_for_cpp](https://github.com/vpiotr/decimal_for_cpp/actions/workflows/action.yml/badge.svg?branch=master)
 
 Author: Piotr Likus
 
