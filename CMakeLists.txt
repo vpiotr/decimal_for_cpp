@@ -15,7 +15,7 @@ if(BUILD_TESTING)
 
     if(Boost_FOUND)
         include_directories(${Boost_INCLUDE_DIRS} include)
-        add_executable(test_runner include/decimal.h tests/runner.cpp tests/decimalTest.ipp)
+        add_executable(test_runner include/decimal.h tests/runner.cpp)
         target_include_directories(test_runner PRIVATE ${BOOST_INCLUDE_DIRS})
     endif()
 

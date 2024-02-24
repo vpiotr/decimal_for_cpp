@@ -1,9 +1,9 @@
 //
+// Test features mentioned in project README
 // Created by piotr on 7/19/21.
 //
 
 #include "decimal.h"
-
 
 BOOST_AUTO_TEST_CASE(decimalAbout) {
     using namespace dec;

@@ -17,19 +17,20 @@ extern int putenv(char*);
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE "C++ Unit Tests for decimal"
 #include <boost/test/included/unit_test.hpp>
+using namespace boost::unit_test;
 
 BOOST_AUTO_TEST_SUITE ( test )
-#include "decimalTest.ipp"
+#include "decimalTest.cpp"
 #include "decimalTestAbout.cpp"
 #include "decimalTestArithmetic.cpp"
+#include "decimalTestDiv.cpp"
+#include "decimalTestEdgeCases.cpp"
+#include "decimalTestModulo.cpp"
+#include "decimalTestMult.cpp"
+#include "decimalTestMultDiv.cpp"
 #include "decimalTestRounding.cpp"
 #include "decimalTestRoundOth.cpp"
-#include "decimalTestMultDiv.cpp"
-#include "decimalTestMult.cpp"
-#include "decimalTestDiv.cpp"
 #include "decimalTestString.cpp"
 #include "decimalTestTypeLevel.cpp"
 #include "decimalTestWithExponent.cpp"
-#include "decimalTestModulo.cpp"
-//#include "decimalTestIo.ipp"
 BOOST_AUTO_TEST_SUITE_END( )

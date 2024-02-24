@@ -3,6 +3,7 @@
 //
 
 #include "decimal.h"
+#include "decimalTestUtils.cpp"
 
 BOOST_AUTO_TEST_CASE(decimalHighEndVals)
         {
