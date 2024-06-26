@@ -186,12 +186,24 @@ BOOST_AUTO_TEST_CASE(decimalFloatConstructorHighPrec) {
 
 #ifndef DEC_NO_CPP11
 BOOST_AUTO_TEST_CASE(trivialAndNoThrowConstructor) {
+#ifdef DEC_TRIVIAL_DEFAULT_CONSTRUCTIBLE
+    BOOST_CHECK_EQUAL(std::is_trivial<dec::decimal<6>>::value, true);
+#else
     BOOST_CHECK_EQUAL(std::is_trivial<dec::decimal<6>>::value, false);
+#endif
 
+#ifdef DEC_TRIVIAL_DEFAULT_CONSTRUCTIBLE
+    BOOST_CHECK_EQUAL(std::is_trivially_constructible<dec::decimal<6>>::value, true);
+#else
     BOOST_CHECK_EQUAL(std::is_trivially_constructible<dec::decimal<6>>::value, false);
+#endif
     BOOST_CHECK_EQUAL(std::is_nothrow_constructible<dec::decimal<6>>::value, true);
 
+#ifdef DEC_TRIVIAL_DEFAULT_CONSTRUCTIBLE
+    BOOST_CHECK_EQUAL(std::is_trivially_default_constructible<dec::decimal<6>>::value, true);
+#else
     BOOST_CHECK_EQUAL(std::is_trivially_default_constructible<dec::decimal<6>>::value, false);
+#endif
     BOOST_CHECK_EQUAL(std::is_nothrow_default_constructible<dec::decimal<6>>::value, true);
 
     BOOST_CHECK_EQUAL(std::is_trivially_copy_constructible<dec::decimal<6>>::value, true);
