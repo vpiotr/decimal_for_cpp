@@ -36,6 +36,8 @@
 // - define DEC_EXTERNAL_LIMITS to define by yourself DEC_MAX_INT32
 // - define DEC_NO_CPP11 if your compiler does not support C++11
 // - define DEC_ALLOW_SPACESHIP_OPER as 1 if your compiler supports spaceship operator
+// - define DEC_TRIVIAL_DEFAULT_CONSTRUCTIBLE as 1 if you want to make default constructor trivial
+//   use with caution because default constructor will not initialize the object
 // - define DEC_TYPE_LEVEL as 0 for strong typing (same precision required for both arguments),
 //   as 1 for allowing to mix lower or equal precision types
 //   as 2 for automatic rounding when different precision is mixed
@@ -685,14 +687,23 @@ public:
     };
 
 #ifdef DEC_NO_CPP11
-    decimal() {
-        init(0);
-    }
+    #ifdef DEC_TRIVIAL_DEFAULT_CONSTRUCTIBLE
+        decimal() {
+        }
+    #else
+        decimal() {
+            init(0);
+        }
+    #endif
     decimal(const decimal &src) {
         init(src);
     }
 #else
-    decimal() noexcept : m_value(0) {}
+    #ifdef DEC_TRIVIAL_DEFAULT_CONSTRUCTIBLE
+        decimal() noexcept = default;
+    #else
+        decimal() noexcept : m_value(0) {}
+    #endif
     decimal(const decimal &src) = default;
 #endif
     explicit decimal(uint value) {
