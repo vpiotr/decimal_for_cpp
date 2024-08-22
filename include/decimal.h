@@ -84,6 +84,13 @@
 #define DEC_CONSTEXPR constexpr
 #endif
 
+#ifdef DEC_NO_CPP11
+    #define DEC_MOVE(x) (x)
+#else
+    #include <utility>
+    #define DEC_MOVE(x) std::move(x)
+#endif
+
 #if (DEC_ALLOW_SPACESHIP_OPER == 1) && (__cplusplus > 201703L)
 #define DEC_USE_SPACESHIP_OPER 1
 #else
@@ -1941,7 +1948,7 @@ bool fromStream(StreamType &input, const basic_decimal_format &format, decimal_t
 
         ostringstream out;
         toStream(arg, format, out);
-        output = out.str();
+        output = DEC_MOVE(out.str());
         return output;
     }
 
@@ -1952,7 +1959,7 @@ bool fromStream(StreamType &input, const basic_decimal_format &format, decimal_t
 
         ostringstream out;
         toStream(arg, out);
-        output = out.str();
+        output = DEC_MOVE(out.str());
         return output;
     }
 
