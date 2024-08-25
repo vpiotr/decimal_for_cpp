@@ -78,6 +78,19 @@
 #define DEC_OVERRIDE override
 #endif
 
+#ifdef DEC_NO_CPP11
+#define DEC_CONSTEXPR const
+#else
+#define DEC_CONSTEXPR constexpr
+#endif
+
+#ifdef DEC_NO_CPP11
+    #define DEC_MOVE(x) (x)
+#else
+    #include <utility>
+    #define DEC_MOVE(x) std::move(x)
+#endif
+
 #if (DEC_ALLOW_SPACESHIP_OPER == 1) && (__cplusplus > 201703L)
 #define DEC_USE_SPACESHIP_OPER 1
 #else
@@ -188,27 +201,27 @@ enum {
 // Class definitions
 // ----------------------------------------------------------------------------
 template<int Prec> struct DecimalFactor {
-    static const int64 value = 10 * DecimalFactor<Prec - 1>::value;
+    static DEC_CONSTEXPR int64 value = 10 * DecimalFactor<Prec - 1>::value;
 };
 
 template<> struct DecimalFactor<0> {
-    static const int64 value = 1;
+    static DEC_CONSTEXPR int64 value = 1;
 };
 
 template<> struct DecimalFactor<1> {
-    static const int64 value = 10;
+    static DEC_CONSTEXPR int64 value = 10;
 };
 
 template<int Prec, bool positive> struct DecimalFactorDiff_impl {
-    static const int64 value = DecimalFactor<Prec>::value;
+    static DEC_CONSTEXPR int64 value = DecimalFactor<Prec>::value;
 };
 
 template<int Prec> struct DecimalFactorDiff_impl<Prec, false> {
-    static const int64 value = INT64_MIN;
+    static DEC_CONSTEXPR int64 value = INT64_MIN;
 };
 
 template<int Prec> struct DecimalFactorDiff {
-    static const int64 value = DecimalFactorDiff_impl<Prec, Prec >= 0>::value;
+    static DEC_CONSTEXPR int64 value = DecimalFactorDiff_impl<Prec, Prec >= 0>::value;
 };
 
 #ifndef DEC_EXTERNAL_ROUND
@@ -1935,7 +1948,7 @@ bool fromStream(StreamType &input, const basic_decimal_format &format, decimal_t
 
         ostringstream out;
         toStream(arg, format, out);
-        output = out.str();
+        output = DEC_MOVE(out.str());
         return output;
     }
 
@@ -1946,7 +1959,7 @@ bool fromStream(StreamType &input, const basic_decimal_format &format, decimal_t
 
         ostringstream out;
         toStream(arg, out);
-        output = out.str();
+        output = DEC_MOVE(out.str());
         return output;
     }
 
