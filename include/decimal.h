@@ -780,13 +780,13 @@ public:
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     typename ENABLE_IF<Prec >= Prec2, decimal>::type
-    & operator=(const decimal<Prec2> &rhs) {
+    & operator=(const decimal<Prec2, RoundPolicy> &rhs) {
         m_value = rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return *this;
     }
 #elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
-    decimal & operator=(const decimal<Prec2> &rhs) {
+    decimal & operator=(const decimal<Prec2, RoundPolicy> &rhs) {
         if (Prec2 > Prec) {
             RoundPolicy::div_rounded(m_value, rhs.getUnbiased(),
                     DecimalFactorDiff<Prec2 - Prec>::value);
@@ -900,14 +900,14 @@ public:
 #if DEC_TYPE_LEVEL == 1
 template<int Prec2>
     const typename ENABLE_IF<Prec >= Prec2, decimal>::type
-    operator+(const decimal<Prec2> &rhs) const {
+    operator+(const decimal<Prec2, RoundPolicy> &rhs) const {
         decimal result = *this;
         result.m_value += rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return result;
     }
 #elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
-    const decimal operator+(const decimal<Prec2> &rhs) const {
+    const decimal operator+(const decimal<Prec2, RoundPolicy> &rhs) const {
         decimal result = *this;
         if (Prec2 > Prec) {
             int64 val;
@@ -937,13 +937,13 @@ template<int Prec2>
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     typename ENABLE_IF<Prec >= Prec2, decimal>::type
-    & operator+=(const decimal<Prec2> &rhs) {
+    & operator+=(const decimal<Prec2, RoundPolicy> &rhs) {
         m_value += rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return *this;
     }
 #elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
-    decimal & operator+=(const decimal<Prec2> &rhs) {
+    decimal & operator+=(const decimal<Prec2, RoundPolicy> &rhs) {
         if (Prec2 > Prec) {
             int64 val;
             RoundPolicy::div_rounded(val, rhs.getUnbiased(),
@@ -982,14 +982,14 @@ template<int Prec2>
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     const typename ENABLE_IF<Prec >= Prec2, decimal>::type
-    operator-(const decimal<Prec2> &rhs) const {
+    operator-(const decimal<Prec2, RoundPolicy> &rhs) const {
         decimal result = *this;
         result.m_value -= rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return result;
     }
 #elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
-    const decimal operator-(const decimal<Prec2> &rhs) const {
+    const decimal operator-(const decimal<Prec2, RoundPolicy> &rhs) const {
         decimal result = *this;
         if (Prec2 > Prec) {
             int64 val;
@@ -1019,13 +1019,13 @@ template<int Prec2>
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     typename ENABLE_IF<Prec >= Prec2, decimal>::type
-    & operator-=(const decimal<Prec2> &rhs) {
+    & operator-=(const decimal<Prec2, RoundPolicy> &rhs) {
         m_value -= rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         return *this;
     }
 #elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
-    decimal & operator-=(const decimal<Prec2> &rhs) {
+    decimal & operator-=(const decimal<Prec2, RoundPolicy> &rhs) {
         if (Prec2 > Prec) {
             int64 val;
             RoundPolicy::div_rounded(val, rhs.getUnbiased(),
@@ -1055,7 +1055,7 @@ template<int Prec2>
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     const typename ENABLE_IF<Prec >= Prec2, decimal>::type
-    operator*(const decimal<Prec2>& rhs) const {
+    operator*(const decimal<Prec2, RoundPolicy>& rhs) const {
         decimal result = *this;
         result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
                 rhs.getUnbiased(), DecimalFactor<Prec2>::value);
@@ -1063,7 +1063,7 @@ template<int Prec2>
     }
 #elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
-    const decimal operator*(const decimal<Prec2>& rhs) const {
+    const decimal operator*(const decimal<Prec2, RoundPolicy>& rhs) const {
         decimal result = *this;
         result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
                 rhs.getUnbiased(), DecimalFactor<Prec2>::value);
@@ -1086,14 +1086,14 @@ template<int Prec2>
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     typename ENABLE_IF<Prec >= Prec2, decimal>::type
-    & operator*=(const decimal<Prec2>& rhs) {
+    & operator*=(const decimal<Prec2, RoundPolicy>& rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.getUnbiased(),
                 DecimalFactor<Prec2>::value);
         return *this;
     }
 #elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
-    decimal & operator*=(const decimal<Prec2>& rhs) {
+    decimal & operator*=(const decimal<Prec2, RoundPolicy>& rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value, rhs.getUnbiased(),
                 DecimalFactor<Prec2>::value);
         return *this;
@@ -1117,7 +1117,7 @@ template<int Prec2>
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     const typename ENABLE_IF<Prec >= Prec2, decimal>::type
-    operator/(const decimal<Prec2>& rhs) const {
+    operator/(const decimal<Prec2, RoundPolicy>& rhs) const {
         decimal result = *this;
         result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
                 DecimalFactor<Prec2>::value, rhs.getUnbiased());
@@ -1125,7 +1125,7 @@ template<int Prec2>
     }
 #elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
-    const decimal operator/(const decimal<Prec2>& rhs) const {
+    const decimal operator/(const decimal<Prec2, RoundPolicy>& rhs) const {
         decimal result = *this;
         result.m_value = dec_utils<RoundPolicy>::multDiv(result.m_value,
                 DecimalFactor<Prec2>::value, rhs.getUnbiased());
@@ -1150,7 +1150,7 @@ template<int Prec2>
 #if DEC_TYPE_LEVEL == 1
     template<int Prec2>
     typename ENABLE_IF<Prec >= Prec2, decimal>::type
-    & operator/=(const decimal<Prec2> &rhs) {
+    & operator/=(const decimal<Prec2, RoundPolicy> &rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value,
                 DecimalFactor<Prec2>::value, rhs.getUnbiased());
 
@@ -1158,7 +1158,7 @@ template<int Prec2>
     }
 #elif DEC_TYPE_LEVEL > 1
     template<int Prec2>
-    decimal & operator/=(const decimal<Prec2> &rhs) {
+    decimal & operator/=(const decimal<Prec2, RoundPolicy> &rhs) {
         m_value = dec_utils<RoundPolicy>::multDiv(m_value,
                                                   DecimalFactor<Prec2>::value, rhs.getUnbiased());
 
@@ -1197,7 +1197,7 @@ template<int Prec2>
 #if DEC_TYPE_LEVEL >= 1
     template<int Prec2>
     typename ENABLE_IF<Prec >= Prec2, decimal>::type
-    operator%(const decimal<Prec2> &rhs) const {
+    operator%(const decimal<Prec2, RoundPolicy> &rhs) const {
         int64 rhsInThisPrec = rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         int64 resultPayload = this->m_value;
         resultPayload %= rhsInThisPrec;
@@ -1208,7 +1208,7 @@ template<int Prec2>
 
     template<int Prec2>
     typename ENABLE_IF<Prec >= Prec2, decimal &>::type
-    operator%=(const decimal<Prec2> &rhs) {
+    operator%=(const decimal<Prec2, RoundPolicy> &rhs) {
         int64 rhsInThisPrec = rhs.getUnbiased() * DecimalFactorDiff<Prec - Prec2>::value;
         int64 resultPayload = this->m_value;
         resultPayload %= rhsInThisPrec;
@@ -1220,7 +1220,7 @@ template<int Prec2>
 #if DEC_TYPE_LEVEL > 1
     template<int Prec2>
     typename ENABLE_IF<Prec < Prec2, decimal>::type
-    operator%(const decimal<Prec2> &rhs) const {
+    operator%(const decimal<Prec2, RoundPolicy> &rhs) const {
         int64 thisInRhsPrec = m_value * DecimalFactorDiff<Prec2 - Prec>::value;
         int64 resultPayload = thisInRhsPrec % rhs.getUnbiased();
         resultPayload /= DecimalFactorDiff<Prec2 - Prec>::value;
@@ -1231,7 +1231,7 @@ template<int Prec2>
 
     template<int Prec2>
     typename ENABLE_IF<Prec < Prec2, decimal>::type
-    operator%=(const decimal<Prec2> &rhs) {
+    operator%=(const decimal<Prec2, RoundPolicy> &rhs) {
         int64 thisInRhsPrec = m_value * DecimalFactorDiff<Prec2 - Prec>::value;
         int64 resultPayload = thisInRhsPrec % rhs.getUnbiased();
         resultPayload /= DecimalFactorDiff<Prec2 - Prec>::value;
