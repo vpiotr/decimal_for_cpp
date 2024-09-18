@@ -36,6 +36,24 @@ BOOST_AUTO_TEST_CASE(decimalAsInteger)
     BOOST_CHECK_EQUAL(c.getAsInteger(), expectedValue);
 }
 
+BOOST_AUTO_TEST_CASE(issue67)
+{
+    using namespace std;
+    dec::decimal<4, dec::half_even_round_policy> p1("350.68");
+    dec::decimal<4, dec::half_even_round_policy> p2("359.2050");
+
+    dec::decimal<0, dec::half_even_round_policy> s1("550");
+    dec::decimal<0, dec::half_even_round_policy> s2("550");
+
+    dec::decimal<0, dec::half_even_round_policy> s_sum = s1 + s2;
+    dec::decimal<4, dec::half_even_round_policy> p_sum = p1 + p2;
+    dec::decimal<4, dec::half_even_round_policy> result = (p_sum / s_sum);
+
+    dec::decimal<4, dec::half_even_round_policy> expected("0.6454");
+
+    BOOST_CHECK_EQUAL(expected, result);
+}
+
 // test with values internally > 2^32
 BOOST_AUTO_TEST_CASE(decimalMidOverflow)
 {

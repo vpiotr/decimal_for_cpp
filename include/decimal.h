@@ -281,7 +281,30 @@ class dec_utils {
 public:
     // result = (value1 * value2) / divisor
     inline static int64 multDiv(const int64 value1, const int64 value2,
-            int64 divisor) {
+                                int64 divisor) {
+
+        if (value1 == 0 || value2 == 0) {
+            return 0;
+        }
+
+        if (divisor == 1) {
+            return value1 * value2;
+        }
+
+        if (value1 == 1) {
+            int64 result;
+            if (RoundPolicy::div_rounded(result, value2, divisor)) {
+                return result;
+            }
+        }
+
+        if (value2 == 1) {
+            int64 result;
+            if (RoundPolicy::div_rounded(result, value1, divisor)) {
+                return result;
+            }
+        }
+
         // we don't check for division by zero, the caller should - the next line will throw.
         const int64 value1int = value1 / divisor;
         int64 value1dec = value1 % divisor;
