@@ -7,11 +7,11 @@ Author: Piotr Likus
 
 Created: 03/01/2011
 
-Modified: 24/02/2024
+Modified: 18/09/2024
 
 Licence: BSD
 
-Version: 1.20
+Version: 1.21
 
 
 This data type is designed to perform calculation with on-fly  roundings
